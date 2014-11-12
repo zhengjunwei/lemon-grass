@@ -1,0 +1,15 @@
+{
+    "name": "dianjoy/lemon-grass",
+    "description": "a backend provide RESTful api",
+    "require": {
+        "mustache/mustache": "~2.7",
+      "codingbean/macaw": "dev-master"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Meathill",
+            "email": "lujia.zhai@dianjoy.com"
+        }
+    ]
+}
