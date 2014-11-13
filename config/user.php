@@ -13,7 +13,7 @@ Macaw::get('user/', function () {
     $result = array(
       'code' => 0,
       'msg' => 'is login',
-      'data' => array(
+      'me' => array(
         'id' => $_SESSION['id'],
         'user' => $_SESSION['user'],
         'fullname' => $_SESSION['fullname'],
@@ -58,7 +58,18 @@ Macaw::post('user', function () {
   $_SESSION['user'] = $username;
   $_SESSION['id'] = $admin['id'];
   $_SESSION['role'] = $admin['permission'];
-
+  $_SESSION['fullname'] = $admin['fullname'];
+  $result = array(
+    'code' => 0,
+    'msg' => 'login',
+    'me' => array(
+      'id' => $_SESSION['id'],
+      'user' => $_SESSION['user'],
+      'fullname' => $_SESSION['fullname'],
+      'role' => $_SESSION['role'],
+    ),
+  );
+  echo json_encode($result);
 });
 
 Macaw::delete('user', function () {
