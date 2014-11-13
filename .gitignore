@@ -1,5 +1,9 @@
 # IDE
 .idea
+*.lock
 
 # repo
 /vendor/
+
+# DB
+inc/pdo*.*

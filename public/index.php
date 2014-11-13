@@ -9,5 +9,22 @@
 // Autoload
 require '../vendor/autoload.php';
 
+session_start();
+header('Content-type: application/JSON; charset=UTF-8');
+
+$HTTP_CODE = array(
+  400 => 'Bad Request',
+  401 => 'Unauthorized',
+);
+function exit_with_error($code, $msg, $http_code) {
+  global $HTTP_CODE;
+  header("HTTP/1.1 $http_code " . $HTTP_CODE[$http_code]);
+  exit(json_encode(array(
+    'code' => $code,
+    'msg' => $msg,
+  )));
+}
+
 // routes
 require '../config/routes.php';
+require '../config/user.php';

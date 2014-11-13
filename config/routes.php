@@ -7,9 +7,7 @@
  */
 use NoahBuscher\Macaw\Macaw;
 
-Macaw::get('', function () {
-  echo 'hello world';
-});
+Macaw::get('', 'HomeController@home');
 
 Macaw::get('(:all)', function ($fn) {
   echo 'sth:' . $fn;
@@ -18,5 +16,3 @@ Macaw::get('(:all)', function ($fn) {
 Macaw::error(function() {
   echo '404 :: Not Found';
 });
-
-Macaw::dispatch();
