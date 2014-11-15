@@ -9,12 +9,15 @@
 // Autoload
 require '../vendor/autoload.php';
 
+use NoahBuscher\Macaw\Macaw;
+
 session_start();
 header('Content-type: application/JSON; charset=UTF-8');
 
 $HTTP_CODE = array(
   400 => 'Bad Request',
   401 => 'Unauthorized',
+  422 => 'Unprocessable Entity',
 );
 function exit_with_error($code, $msg, $http_code) {
   global $HTTP_CODE;
@@ -26,5 +29,7 @@ function exit_with_error($code, $msg, $http_code) {
 }
 
 // routes
-require '../config/routes.php';
-require '../config/user.php';
+require '../router/routes.php';
+require '../router/user.php';
+require '../router/ad.php';
+Macaw::dispatch();

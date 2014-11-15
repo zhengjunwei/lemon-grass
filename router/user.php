@@ -36,7 +36,7 @@ Macaw::post('user/', function () {
   }
 
   if ($username == '' || $password == '') {
-    exit_with_error(2, '用户名或密码不能为空', 400);
+    exit_with_error(2, '用户名或密码不能为空', 422);
   }
 
   $password = md5($password .$username);
@@ -77,5 +77,3 @@ Macaw::post('user/', function () {
 Macaw::delete('user', function () {
 
 });
-
-Macaw::dispatch();
