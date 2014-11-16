@@ -32,4 +32,5 @@ function exit_with_error($code, $msg, $http_code) {
 require '../router/routes.php';
 require '../router/user.php';
 require '../router/ad.php';
+require '../router/stat.php';
 Macaw::dispatch();

@@ -40,7 +40,7 @@ Macaw::post('user/', function () {
   }
 
   $password = md5($password .$username);
-  $pdo = require '../inc/pdo_admin.php';
+  $pdo = require '../config/pdo_admin.php';
   $sql = "SELECT id,QQ,permission,associate
           FROM t_admin
           WHERE username=:username and password=:password and `status`=1";
