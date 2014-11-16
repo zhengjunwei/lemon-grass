@@ -16,17 +16,19 @@ Macaw::get('stat/', function () {
 
   $me = $_SESSION['id'];
 
-  $today = date("Y-m-d");
-  $start = empty($_REQUEST['start']) ? $today : $_REQUEST['start'];
+  $today = date('Y-m-d');
+  $week = date('Y-m-d', time() - 604800);
+  $start = empty($_REQUEST['start']) ? $week : $_REQUEST['start'];
   $end = empty($_REQUEST['end']) ? $today : $_REQUEST['end'];
   $pagesize = empty($_REQUEST['pagesize']) ? 10 : (int)$_REQUEST['pagesize'];
   $page = (int)$_REQUEST['page'];
   $page_start = $page * $pagesize;
+  $keyword = $_REQUEST['keyword'];
 
   require_once(dirname(__FILE__) . '/../dev_inc/admin_ad_info.class.php');
-  $adinfo = admin_ad_info::get_ad_infos_by_owner($DB, $me, $page_start, $pagesize);
+  $adinfo = admin_ad_info::get_ad_infos_by_owner($DB, $me, $start, $end, $keyword, $page_start, $pagesize);
   $adids = implode("','", array_unique(array_keys($adinfo)));
-  $total = admin_ad_info::get_ad_number_by_owner($DB, $me);
+  $total = admin_ad_info::get_ad_number_by_owner($DB, $me, $start, $end, $keyword);
 
   require_once(dirname(__FILE__) . '/../dev_inc/transfer_stat.class.php');
   $t = new transfer_stat(true);
