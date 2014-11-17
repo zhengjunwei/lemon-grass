@@ -8,25 +8,11 @@
 
 // Autoload
 require '../vendor/autoload.php';
+require '../config/config.php';
 
 use NoahBuscher\Macaw\Macaw;
 
 session_start();
-header('Content-type: application/JSON; charset=UTF-8');
-
-$HTTP_CODE = array(
-  400 => 'Bad Request',
-  401 => 'Unauthorized',
-  422 => 'Unprocessable Entity',
-);
-function exit_with_error($code, $msg, $http_code) {
-  global $HTTP_CODE;
-  header("HTTP/1.1 $http_code " . $HTTP_CODE[$http_code]);
-  exit(json_encode(array(
-    'code' => $code,
-    'msg' => $msg,
-  )));
-}
 
 // routes
 require '../router/routes.php';
