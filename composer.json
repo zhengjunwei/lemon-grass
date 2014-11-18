@@ -8,6 +8,7 @@
     "filp/whoops": "~1.0"
   },
   "license": "MIT",
+  "version": "0.1.0",
   "authors": [
       {
           "name": "Meathill",
@@ -16,7 +17,8 @@
   ],
   "autoload": {
     "classmap": [
-      "app/controller"
+      "app/controller",
+      "app/utils"
     ]
   }
 }

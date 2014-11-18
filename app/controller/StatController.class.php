@@ -21,7 +21,7 @@ class StatController extends BaseController {
     $keyword = $_REQUEST['keyword'];
 
     require_once(dirname(__FILE__) . '/../../dev_inc/admin_ad_info.class.php');
-    $adinfo = admin_ad_info::get_ad_infos_by_owner($DB, $me, $start, $end, $keyword, $page_start, $pagesize);
+    $adinfo = admin_ad_info::get_ad_info_by_owner($DB, $me, $start, $end, $keyword, $page_start, $pagesize);
     $adids = implode("','", array_unique(array_keys($adinfo)));
     $total = admin_ad_info::get_ad_number_by_owner($DB, $me, $start, $end, $keyword);
 

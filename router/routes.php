@@ -28,10 +28,6 @@ Macaw::get('dashboard/', function () {
   exit(json_encode($result));
 });
 
-Macaw::get('(:all)', function ($fn) {
-  echo 'sth:' . $fn;
-});
-
 Macaw::error(function() {
   echo '404 :: Not Found';
 });

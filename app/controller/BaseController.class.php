@@ -23,6 +23,14 @@ class BaseController {
   protected function get_pdo_write() {
     return require '../../config/pdo_admin.php';
   }
+  protected function get_cm() {
+    require dirname(__FILE__) . '/../../inc/cm.class.php';
+    return new CM();
+  }
+  protected function get_post_data() {
+    $request = file_get_contents('php://input');
+    return json_decode($request, true);
+  }
 
   protected function exit_with_error($code, $msg, $http_code) {
     header('Content-type: application/JSON; charset=UTF-8');
