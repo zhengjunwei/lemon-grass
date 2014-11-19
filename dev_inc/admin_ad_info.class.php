@@ -56,37 +56,4 @@ class admin_ad_info extends ad_info {
             GROUP BY ad_id";
     return $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC|PDO::FETCH_UNIQUE|PDO::FETCH_GROUP);
   }
-
-  public function insert(PDO $DB, $id, $attr ) {
-    $attr['id'] = $id;
-    $sql = SQLHelper::create_insert_sql('t_adinfo', $attr);
-    $params = SQLHelper::get_input_parameters($attr);
-    $state = $DB->prepare($sql);
-    return $state->execute($params);
-  }
-
-  public function insert_ios(PDO $DB, $id, $callback ) {
-    $callback['id'] = $id;
-    $sql = SQLHelper::create_insert_sql('t_adinfo_callback', $callback);
-    $params = SQLHelper::get_input_parameters($callback);
-    $state = $DB->prepare($sql);
-    return $state->execute($params);
-  }
-
-  public function insert_callback(PDO $DB, $id, $callback ) {
-    $callback = array_pick($callback, 'salt', 'click_url', 'ip');
-    $callback['id'] = $id;
-    $sql = SQLHelper::create_insert_sql('t_adinfo_callback', $callback);
-    $params = SQLHelper::get_input_parameters($callback);
-    $state = $DB->prepare($sql);
-    return $state->execute($params);
-  }
-
-  public function insert_ad_source(PDO $DB, $id, $channel ) {
-    $channel['id'] = $id;
-    $sql = SQLHelper::create_insert_sql('t_ad_source', $channel);
-    $params = SQLHelper::get_input_parameters($channel);
-    $state = $DB->prepare($sql);
-    return $state->execute($params);
-  }
 }

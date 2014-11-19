@@ -18,7 +18,8 @@
   "autoload": {
     "classmap": [
       "app/controller",
-      "app/utils"
+      "app/utils",
+      "app/SQLHelper.class.php"
     ]
   }
 }

@@ -7,6 +7,12 @@
  */
 
 class ADController extends BaseController {
+  static $T_CALLBACK = 't_adinfo_callback';
+  static $T_IOS_INFO = 't_adinfo_ios';
+  static $T_SOURCE = 't_ad_source';
+  static $T_INFO = 't_adinfo';
+  static $FIELDS_CALLBACK = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type');
+  static $FIELDS_CHANNEL = array('channel', 'channel_id', 'owner', 'channel_url', 'channel_user', 'channel_pwd', 'feedback', 'cycle');
 
   private function get_ad_info() {
     require_once dirname(__FILE__) . "/../../dev_inc/admin_ad_info.class.php";
@@ -123,39 +129,37 @@ class ADController extends BaseController {
       'ad_type' => 0,
       'cate' => 1,
       'cpc_cpa' => 'cpa',
-      'days' => 1,
       's_rmb' => 10,
       'ratio' => 1,
-      'endtime' => date("Y-m-d H:i:s", time()+7776000),
       'put_level' => 3,
       'imsi' => 0,
       'put_net' => 0,
       'net_type' => 0,
-      'net_types' => $CM->all_net_types,
       'put_jb' => 0,
       'put_ipad' => 0,
       'owner' => -1,
       'feedback' => 0,
       'cycle' => 0,
       'salt' => substr(md5(time()), 0, 8),
-      'platforms' => array(),
-      'cates' => array(),
-      'ad_types' => $labels,
-      'is_android' => true,
       'url_type'=>'',
       'province_type' => 0,
-      'provinces' => array(),
       'share_text'=>'',
       'down_type' => 0,
     );
+    $options = array(
+      'cates' => array(),
+      'net_types' => $CM->all_net_types,
+      'ad_types' => $labels,
+      'provinces' => array(),
+    );
     foreach ($CM->ad_cate as $key => $value) {
-      $init['cates'][] = array(
+      $options['cates'][] = array(
         'key' => $key,
         'value' => $value,
       );
     }
     foreach ($CM->provinces as $key => $value) {
-      $init['provinces'][] = array(
+      $options['provinces'][] = array(
         'key' => $key,
         'value' => $value,
       );
@@ -166,10 +170,12 @@ class ADController extends BaseController {
         'code' => 0,
         'msg' => 'init',
         'ad' => $init,
+        'options' => $options,
       ));
     }
     // 广告内容
     $res = $ad_info->get_ad_by_id($DB, $id);
+    $ad_shoot = preg_replace('/^,|,$/', '', $res['ad_shoot']);
 
     // 上传文件记录
     $upload_log = $ad_info->select_upload_log($id, $DB);
@@ -178,16 +184,20 @@ class ADController extends BaseController {
     $channel = $ad_info->select_ad_source($id, $DB);
     $channel['owner'] = $channel['owner'] ? $channel['owner'] : 1;
 
-    $result = array_merge(init, $res, (array)$channel, array(
+    $options = array_merge($options, array(
       'apk_history' => $upload_log,
       'ad_url_full' => (substr($res['ad_url'], 0, 7) == 'upload/' ? 'http://www.dianjoy.com/dev/' : '') . $res['ad_url'],
-      'job_edit' => $res['status'] == 0,
+      'shoots' => array_filter(preg_split('/,{2,}/', $ad_shoot)),
+    ));
+    $result = array_merge(init, $res, (array)$channel, array(
+
     ));
 
     $this->output(array(
       'code' => 0,
       'msg' => 'fetched',
-      'ad' => $result
+      'ad' => $result,
+      'options' => $options,
     ));
   }
 
@@ -198,9 +208,9 @@ class ADController extends BaseController {
    */
   public function create() {
     $DB = $this->get_pdo_write();
-    $ad_info = $this->get_ad_info();
     $CM = $this->get_cm();
     require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
+    require dirname(__FILE__) . '/../../app/utils/array.php';
 
     $id = $CM->id1();
     $attr = $this->get_post_data();
@@ -225,11 +235,14 @@ class ADController extends BaseController {
     }
 
     // 取出分表数据
-    $callback = array_pick_away($attr, 'put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type');
-    $channel = array_pick_away($attr, 'channel', 'channel_id', 'owner', 'channel_url', 'channel_user', 'channel_pwd', 'feedback', 'cycle');
+    $attr = array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL);
+    $callback = array_pick($attr, self::$FIELDS_CALLBACK);
+    $channel = array_pick($attr, self::$FIELDS_CHANNEL);
 
-    $check = $ad_info->insert($DB, $id, $attr);
+    // 插入广告信息
+    $check = SQLHelper::insert($DB, self::$T_INFO, $attr);
     if (!$check) {
+      var_dump(SQLHelper::$info);
       $this->exit_with_error(20, '插入广告失败', 400);
     }
     //广告投放地理位置信息
@@ -247,21 +260,23 @@ class ADController extends BaseController {
         $this->exit_with_error(21, '插入投放地理位置失败', 400);
       }
     }
-
     // 记录平台专属数据
+    $callback['id'] = $id;
     if ($attr['ad_app_type'] == 2) {
-      $check = $ad_info->insert_ios($DB, $id, $callback);
+      $check = SQLHelper::insert($DB, self::$T_IOS_INFO, $callback);
       if (!$check) {
-        $this->exit_with_error(22, '插入iOS特有数据失败', 400);
+        $this->exit_with_error(22, '插入iOS专属数据失败', 400);
       }
     } else {
-      $check = $ad_info->insert_callback($DB, $id, $callback);
+      $callback = array_pick($callback, 'salt', 'click_url', 'ip');
+      $check = SQLHelper::insert($DB, self::$T_CALLBACK, $callback);
       if (!$check) {
         $this->exit_with_error(23, '插入Android回调信息失败', 400);
       }
     }
     // 添加广告主后台信息.
-    $check = $ad_info->insert_ad_source($DB, $id, $channel);
+    $channel['id'] = $id;
+    $check = SQLHelper::insert($DB, self::$T_SOURCE, $channel);
     if (!$check) {
       $this->exit_with_error(24, '插入广告主后台信息失败', 400);
     }
@@ -269,17 +284,20 @@ class ADController extends BaseController {
     $this->output(array(
       'code' => 0,
       'msg' => 'created',
-      'ad' => $attr,
+      'ad' => array(
+        'id' => $id
+      ),
     ));
   }
 
   /**
    * 修改广告
+   * 部分属性的修改不会直接体现在表中，而是以请求的方式存在
    * @author Meathill
    * @since 0.1.0
    * @param $id
    */
   public function update($id) {
-    $_REQUEST['m'] = 'update';
+
   }
 } 

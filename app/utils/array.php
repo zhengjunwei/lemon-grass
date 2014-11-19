@@ -15,6 +15,7 @@
  */
 function array_pick($array) {
   $keys = array_slice(func_get_args(), 1);
+  $keys = array_flatten($keys);
   $pick = array();
   foreach ( $keys as $key ) {
     if (array_key_exists($key, $array)) {
@@ -25,21 +26,15 @@ function array_pick($array) {
   return $pick;
 }
 
-/**
- * 功能基本和上面那个一样，不过这个会在pick的同时从原来的对象里删除引用
- * @param $array
- *
- * @return array
- */
-function array_pick_away($array) {
+function array_omit($array) {
   $keys = array_slice(func_get_args(), 1);
+  $keys = array_flatten($keys);
   $pick = array();
-  foreach ( $keys as $key ) {
-    if (array_key_exists($key, $array)) {
+  foreach ( $array as $key => $value ) {
+    if (in_array($key, $keys)) {
       continue;
     }
-    $pick[$key] = $array[$key];
-    unset($array[$key]);
+    $pick[$key] = $value;
   }
   return $pick;
 }

@@ -7,3 +7,7 @@
 
 # DB
 inc/pdo*.*
+
+# test
+public/upload
+public/20*

@@ -28,6 +28,8 @@ Macaw::get('dashboard/', function () {
   exit(json_encode($result));
 });
 
+Macaw::post('file/', 'BaseController@upload');
+
 Macaw::error(function() {
   echo '404 :: Not Found';
 });

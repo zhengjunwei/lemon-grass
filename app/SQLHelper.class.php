@@ -7,6 +7,8 @@
  */
 
 class SQLHelper {
+  static $info = null;
+
   public static function create_insert_sql($table, $array, $use_prepare = true) {
     $keys = array_keys($array);
     $values = array_values($array);
@@ -31,5 +33,15 @@ class SQLHelper {
       $params[":$key"] = $value;
     }
     return $params;
+  }
+
+  public static function insert(PDO $DB, $table, $attr) {
+    $sql = self::create_insert_sql($table, $attr);
+    $params = SQLHelper::get_input_parameters($attr);
+    $state = $DB->prepare($sql);
+    $result = $state->execute($params);
+    var_dump($sql);
+    self::$info = $state->errorInfo();
+    return $result;
   }
 }
