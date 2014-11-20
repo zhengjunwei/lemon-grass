@@ -8,14 +8,14 @@
 
 use NoahBuscher\Macaw\Macaw;
 
-Macaw::get('ad/', 'ADController@get_list');
+Macaw::get(BASE . 'ad/', 'ADController@get_list');
 
-Macaw::get('ad/(:any)', 'ADController@init');
+Macaw::get(BASE . 'ad/(:any)', 'ADController@init');
 
-Macaw::options('ad/', function () {
+Macaw::options(BASE . 'ad/', function () {
   header('Access-Control-Allow-Headers: accept, content-type');
 });
 
-Macaw::post('ad/', 'ADController@create');
+Macaw::post(BASE . 'ad/', 'ADController@create');
 
-Macaw::patch('ad/(:any)', 'ADController@update');
+Macaw::patch(BASE . 'ad/(:any)', 'ADController@update');

@@ -7,9 +7,9 @@
  */
 use NoahBuscher\Macaw\Macaw;
 
-Macaw::get('', 'HomeController@home');
+Macaw::get(BASE . '', 'HomeController@home');
 
-Macaw::get('dashboard/', function () {
+Macaw::get(BASE . 'dashboard/', function () {
   $result = array(
     'code' => 0,
     'msg' => 'ok',
@@ -28,7 +28,7 @@ Macaw::get('dashboard/', function () {
   exit(json_encode($result));
 });
 
-Macaw::post('file/', 'BaseController@upload');
+Macaw::post(BASE . 'file/', 'BaseController@upload');
 
 Macaw::error(function() {
   echo '404 :: Not Found';

@@ -7,3 +7,4 @@
  */
 
 define('DEBUG', 4); // 4为小芳的id
+define('BASE', '');
