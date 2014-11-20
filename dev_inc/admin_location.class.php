@@ -12,6 +12,15 @@ class admin_location extends location {
             (`ad_id`, `province_id`)
             VALUES $values";
     $state = $DB->prepare($sql);
-    return $state->exec($params);
+    return $state->execute($params);
+  }
+
+  static function del_by_ad(PDO $DB, $ad_id) {
+    $sql = "DELETE FROM `t_ad_province`
+            WHERE `ad_id`=:ad_id";
+    $state = $DB->prepare($sql);
+    return $state->execute(array(
+      ':ad_id' => $ad_id,
+    ));
   }
 }

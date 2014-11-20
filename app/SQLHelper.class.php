@@ -20,14 +20,32 @@ class SQLHelper {
               VALUES (:$value)";
     } else {
       $value = implode('\', \'', $values);
-      $sql = "INSERT INTO $table
+      $sql = "INSERT INTO `$table`
             (`$key`)
             VALUES ('$value')";
     }
     return $sql;
   }
 
-  public static function get_input_parameters($array) {
+  private static function create_update_sql( $table, $attr, $id, $use_prepare = true ) {
+    $fields = array();
+    if ($use_prepare) {
+      foreach ( $attr as $key ) {
+        $fields[] = "`$key`=:$key";
+      }
+    } else {
+      foreach ( $attr as $key => $value ) {
+        $fields[] = "`$key`='$value'";
+      }
+    }
+    $fields = implode(', ', $fields);
+    $sql = "UPDATE `$table`
+            SET $fields
+            WHERE `id`=$id";
+    return $sql;
+  }
+
+  public static function get_parameters($array) {
     $params = array();
     foreach ( $array as $key => $value ) {
       $params[":$key"] = $value;
@@ -37,10 +55,18 @@ class SQLHelper {
 
   public static function insert(PDO $DB, $table, $attr) {
     $sql = self::create_insert_sql($table, $attr);
-    $params = SQLHelper::get_input_parameters($attr);
+    $params = self::get_parameters($attr);
     $state = $DB->prepare($sql);
     $result = $state->execute($params);
-    var_dump($sql);
+    self::$info = $state->errorInfo();
+    return $result;
+  }
+
+  public static function update( PDO $DB, $table, $attr, $id ) {
+    $sql = self::create_update_sql($table, $attr, $id);
+    $params = self::get_parameters($attr);
+    $state = $DB->prepare($sql);
+    $result = $state->execute($params);
     self::$info = $state->errorInfo();
     return $result;
   }

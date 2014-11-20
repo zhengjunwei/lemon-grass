@@ -11,8 +11,10 @@ class ADController extends BaseController {
   static $T_IOS_INFO = 't_adinfo_ios';
   static $T_SOURCE = 't_ad_source';
   static $T_INFO = 't_adinfo';
-  static $FIELDS_CALLBACK = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type');
+  public static $T_APPLY = 't_diy_apply';
+  static $FIELDS_CALLBACK = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type', 'open_url_type', 'salt', 'click_url', 'ip');
   static $FIELDS_CHANNEL = array('channel', 'channel_id', 'owner', 'channel_url', 'channel_user', 'channel_pwd', 'feedback', 'cycle');
+  static $FIELDS_APPLY = array('status', 'today_left', 'job_num');
 
   private function get_ad_info() {
     require_once dirname(__FILE__) . "/../../dev_inc/admin_ad_info.class.php";
@@ -26,6 +28,7 @@ class ADController extends BaseController {
    */
   public function get_list() {
     $DB = $this->get_pdo_read();
+    $ad_info =  $this->get_ad_info();
     $me = defined('DEBUG') ? DEBUG : $_SESSION['id'];
 
     $today = date('Y-m-d');
@@ -37,7 +40,6 @@ class ADController extends BaseController {
     $page = isset($_REQUEST['page']) ? (int)$_REQUEST['page'] : 0;
     $page_start = $page * $pagesize;
 
-    $ad_info = new admin_ad_info();
     $res = $ad_info->get_ad_info_by_owner($DB, $me, $start, $end, $keyword, $page_start, $pagesize);
     $total = $ad_info->get_ad_number_by_owner($DB, $me, $start, $end, $keyword);
 
@@ -98,7 +100,7 @@ class ADController extends BaseController {
         'weight' => $value['weight'] / 100,
         'real' => (float)$real[$id]['real'],
         'real_style' => $real[$id]['style'],
-        'num' => $value['step_rmb'] != 0 ? (int)($value['rmb'] / $value['step_rmb']) : 0,
+        'today_left' => $value['step_rmb'] != 0 ? (int)($value['rmb'] / $value['step_rmb']) : 0,
         'job_num' => (int)$ad_jobs[$id]['jobnum'],
         'job_time' => date("H:i", strtotime($ad_jobs[$id]['jobtime'])),
       ));
@@ -129,7 +131,6 @@ class ADController extends BaseController {
       'ad_type' => 0,
       'cate' => 1,
       'cpc_cpa' => 'cpa',
-      's_rmb' => 10,
       'ratio' => 1,
       'put_level' => 3,
       'imsi' => 0,
@@ -215,34 +216,17 @@ class ADController extends BaseController {
     $id = $CM->id1();
     $attr = $this->get_post_data();
 
-    if (strlen($attr['ad_text']) > 45) {
-      $this->exit_with_error(1, '广告语不能超过45个字符', 400);
-    }
-    if (!$attr['pack_name'] || !$attr['ad_size'] || !$attr['ad_lib']) {
-      $this->exit_with_error(2, '广告包相关信息没有填全', 400);
-    }
-    if ($attr['ad_app_type'] == 2) {
-      if (strpos($attr['ad_url'], 'upload') !== 0 && $attr['ip'] != '' && $attr['click_url'] != '') {
-        if ($attr['put_jb'] != 0) {
-          $this->exit_with_error(10, '非越狱包请选择投放全部设备', 400);
-        }
-      } else if ($attr['put_jb'] != 1) {
-        $this->exit_with_error(11, '越狱包请选择投放越狱设备', 400);
-      }
-      if ($attr['feedback'] >= 4 && $attr['feedback'] - $attr['put_jb'] != 4) {
-        $this->exit_with_error(12, ' 数据反馈形式与投放目标不符,请重新审查', 400);
-      }
-    }
+    $attr = $this->validate( $attr );
 
-    // 取出分表数据
-    $attr = array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL);
+    // 拆分不同表的数据
     $callback = array_pick($attr, self::$FIELDS_CALLBACK);
     $channel = array_pick($attr, self::$FIELDS_CHANNEL);
+    $attr = array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, 'total_num');
+    $attr['id'] = $callback['id'] = $channel['id'] = $id;
 
     // 插入广告信息
     $check = SQLHelper::insert($DB, self::$T_INFO, $attr);
     if (!$check) {
-      var_dump(SQLHelper::$info);
       $this->exit_with_error(20, '插入广告失败', 400);
     }
     //广告投放地理位置信息
@@ -261,21 +245,19 @@ class ADController extends BaseController {
       }
     }
     // 记录平台专属数据
-    $callback['id'] = $id;
     if ($attr['ad_app_type'] == 2) {
       $check = SQLHelper::insert($DB, self::$T_IOS_INFO, $callback);
       if (!$check) {
         $this->exit_with_error(22, '插入iOS专属数据失败', 400);
       }
-    } else {
-      $callback = array_pick($callback, 'salt', 'click_url', 'ip');
+    } else if ($callback['click_url']) { // 有回调再插入
+      $callback = array_pick($callback, 'id', 'salt', 'click_url', 'ip');
       $check = SQLHelper::insert($DB, self::$T_CALLBACK, $callback);
       if (!$check) {
         $this->exit_with_error(23, '插入Android回调信息失败', 400);
       }
     }
     // 添加广告主后台信息.
-    $channel['id'] = $id;
     $check = SQLHelper::insert($DB, self::$T_SOURCE, $channel);
     if (!$check) {
       $this->exit_with_error(24, '插入广告主后台信息失败', 400);
@@ -293,11 +275,121 @@ class ADController extends BaseController {
   /**
    * 修改广告
    * 部分属性的修改不会直接体现在表中，而是以请求的方式存在
+   * 针对状态`status`、每日投放量`job_num`、今日余量`today_left`的修改会产生申请
+   * 其它修改会直接入库
    * @author Meathill
    * @since 0.1.0
    * @param $id
    */
   public function update($id) {
+    $DB = $this->get_pdo_write();
+    require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
+    require dirname(__FILE__) . '/../../app/utils/array.php';
 
+    $attr = $this->get_post_data();
+
+    // 发申请
+    if (array_key_exists('status', $attr) || array_key_exists('job_num', $attr)
+      || array_key_exists('today_left', $attr)) {
+      return $this::send_apply($DB, $id, array_pick($attr, self::$FIELDS_APPLY));
+    }
+
+    $attr = $this->validate($attr);
+    // 拆分不同表的数据
+    $callback = array_pick($attr, self::$FIELDS_CALLBACK);
+    $channel = array_pick($attr, self::$FIELDS_CHANNEL);
+    $attr = array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, 'total_num');
+
+    // 插入广告信息
+    $check = SQLHelper::update($DB, self::$T_INFO, $attr, $id);
+    if (!$check) {
+      $this->exit_with_error(30, '修改广告失败', 400);
+    }
+    //广告投放地理位置信息
+    if (count($attr['provinces'])) {
+      admin_location::del_by_ad($DB, $id);
+      $values = array();
+      $params = array();
+      $count = 0;
+      foreach ($attr['provinces'] as $province_id) {
+        $values[] = "('$id',':province$count')";
+        $params[":province$count"] = $province_id;
+      }
+      $values = implode(',', $values);
+      $check = admin_location::insert_ad_province($DB, $values, $params);
+      if (!$check) {
+        $this->exit_with_error(31, '修改投放地理位置失败', 400);
+      }
+    }
+    // 记录平台专属数据
+    if ($attr['ad_app_type'] == 2) {
+      $check = SQLHelper::update($DB, self::$T_IOS_INFO, $callback, $id);
+      if (!$check) {
+        $this->exit_with_error(32, '修改iOS专属数据失败', 400);
+      }
+    } else if ($callback['click_url']) { // 有回调再插入
+      $callback = array_pick($callback, 'id', 'salt', 'click_url', 'ip');
+      $check = SQLHelper::update($DB, self::$T_CALLBACK, $callback, $id);
+      if (!$check) {
+        $this->exit_with_error(33, '修改Android回调信息失败', 400);
+      }
+    }
+    // 添加广告主后台信息.
+    $check = SQLHelper::update($DB, self::$T_SOURCE, $channel, $id);
+    if (!$check) {
+      $this->exit_with_error(34, '修改广告主后台信息失败', 400);
+    }
+  }
+
+  private function send_apply(PDO $DB, $id, $attr ) {
+    $attr['userid'] = $_SESSION['id'];
+    $attr['adid'] = $id;
+    $check = SQLHelper::insert($DB, self::$T_APPLY, $attr);
+    if (!$check) {
+      $this->exit_with_error(40, '创建申请失败', 400);
+    }
+    return $this->output(array(
+
+    ));
+  }
+
+
+  /**
+   * 校验用户修改的内容
+   * @param array $attr
+   *
+   * @return array
+   */
+  private function validate(array $attr ) {
+    if ( array_key_exists('ad_text', $attr) && strlen( $attr['ad_text'] ) > 45 ) {
+      $this->exit_with_error( 1, '广告语不能超过45个字符', 400 );
+    }
+    if ( ! $attr['pack_name'] || ! $attr['ad_size'] || ! $attr['ad_lib'] ) {
+      $this->exit_with_error( 2, '广告包相关信息没有填全', 400 );
+    }
+    if ( array_key_exists('ad_app_type', $attr) && $attr['ad_app_type'] == 2 ) {
+      if ( strpos( $attr['ad_url'], 'upload' ) !== 0 && $attr['ip'] != '' && $attr['click_url'] != '' ) {
+        if ( $attr['put_jb'] != 0 ) {
+          $this->exit_with_error( 10, '非越狱包请选择投放全部设备', 400 );
+        }
+      } else if ( $attr['put_jb'] != 1 ) {
+        $this->exit_with_error( 11, '越狱包请选择投放越狱设备', 400 );
+      }
+      if ( $attr['feedback'] >= 4 && $attr['feedback'] - $attr['put_jb'] != 4 ) {
+        $this->exit_with_error( 12, ' 数据反馈形式与投放目标不符,请重新审查', 400 );
+      }
+    }
+
+    // 对数据进行预处理
+    if (in_array(0, $attr['net_type'])) {
+      $attr['net_type'] = 0;
+    } else {
+      $attr['net_type'] = implode(',', $attr['net_type']);
+    }
+    $attr['seq_rmb'] = $attr['seq_rmb'] == '' ? (int)$attr['step_rmb'] : (int)$attr['seq_rmb'];
+    $attr['create_time'] = date('Y-m-d H:i:s');
+    $attr['open_url_type'] = $attr['feedback'] == 4 ? 0 : 1;
+
+    return $attr;
   }
 } 
