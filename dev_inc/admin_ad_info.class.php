@@ -9,16 +9,21 @@ include_once(dirname(__FILE__) . '/../inc/ad_info.class.php');
 require dirname(__FILE__) . '/../app/SQLHelper.class.php';
 
 class admin_ad_info extends ad_info {
-  public static function get_ad_info_by_owner(PDO $DB, $salesman, $start, $end,
+  public static function get_ad_info_by_owner(PDO $DB, $salesman, $start = '', $end = '',
     $keyword = '', $page_start = 0, $pagesize = 10) {
     if ($keyword) {
       $keyword = " AND (`ad_name` LIKE '%$keyword%' OR `channel` LIKE '%$keyword%') ";
     }
+    if ($start) {
+      $start = " AND `create_time`>='$start'";
+    }
+    if ($end) {
+      $end = " AND `create_time`<='$end'";
+    }
     $sql = "SELECT a.`id`, `ad_name`, `create_time`, `status_time`, `quote_rmb`,
               `step_rmb`, `status`, `owner`, `channel`, `cid`
             FROM `t_adinfo` a LEFT JOIN `t_ad_source` b ON a.id=b.id
-            WHERE owner='$salesman' AND status>=0 AND `create_time`>='$start'
-              AND `create_time`<='$end' $keyword
+            WHERE owner='$salesman' AND status>=0 $start $end $keyword
             ORDER BY `create_time` DESC
             LIMIT $page_start, $pagesize";
     return $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC|PDO::FETCH_UNIQUE);
@@ -36,14 +41,19 @@ class admin_ad_info extends ad_info {
    *
    * @return string $int
    */
-  public static function get_ad_number_by_owner(PDO $DB, $salesman, $start, $end, $keyword = '') {
+  public static function get_ad_number_by_owner(PDO $DB, $salesman, $start = '', $end = '', $keyword = '') {
     if ($keyword) {
       $keyword = " AND (`ad_name` LIKE '%$keyword%' OR `channel` LIKE '%$keyword%') ";
     }
+    if ($start) {
+      $start = " AND `create_time`>='$start'";
+    }
+    if ($end) {
+      $end = " AND `create_time`<='$end'";
+    }
     $sql = "SELECT COUNT('X')
             FROM `t_adinfo` a LEFT JOIN `t_ad_source` s ON a.`id`=s.`id`
-            WHERE `owner`=$salesman AND `status`>=0 AND `create_time`>='$start'
-              AND `create_time`<='$end' $keyword";
+            WHERE `owner`=$salesman AND `status`>=0 $start $end $keyword";
     return $DB->query($sql)->fetchColumn();
   }
 
@@ -55,5 +65,13 @@ class admin_ad_info extends ad_info {
               AND `jobnum`>0 AND `jobtime`<'$the_day_after_tomorrow'
             GROUP BY ad_id";
     return $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC|PDO::FETCH_UNIQUE|PDO::FETCH_GROUP);
+  }
+
+  public function get_rmb_out_by_ad(PDO $DB, $adids ) {
+    $adids = is_array($adids) ? implode("','", $adids) : $adids;
+    $sql = "SELECT `id`,`rmb_out`
+            FROM `t_adinfo_rmb`
+            WHERE `id` IN ('$adids')";
+    return $DB->query($sql)->fetchAll(PDO::FETCH_COLUMN | PDO::FETCH_UNIQUE);
   }
 }

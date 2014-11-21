@@ -31,49 +31,24 @@ class ADController extends BaseController {
     $ad_info =  $this->get_ad_info();
     $me = defined('DEBUG') ? DEBUG : $_SESSION['id'];
 
-    $today = date('Y-m-d');
-    $week = date('Y-m-d', time() - 604800);
-    $start = isset($_REQUEST['start']) ? $_REQUEST['start'] : $week;
-    $end = isset($_REQUEST['end']) ? $_REQUEST['end'] : $today;
     $keyword = isset($_REQUEST['$keyword']) ? $_REQUEST['$keyword'] : FALSE;
     $pagesize = isset($_REQUEST['pagesize']) ? (int)$_REQUEST['pagesize'] : 10;
     $page = isset($_REQUEST['page']) ? (int)$_REQUEST['page'] : 0;
     $page_start = $page * $pagesize;
 
-    $res = $ad_info->get_ad_info_by_owner($DB, $me, $start, $end, $keyword, $page_start, $pagesize);
-    $total = $ad_info->get_ad_number_by_owner($DB, $me, $start, $end, $keyword);
+    $res = $ad_info->get_ad_info_by_owner($DB, $me, '', '', $keyword, $page_start, $pagesize);
+    $total = $ad_info->get_ad_number_by_owner($DB, $me, '', '', $keyword);
+    $adids = array_keys(array_filter($res));
 
-    require_once(dirname(__FILE__) . '/../../dev_inc/transfer_stat.class.php');
-    $transfer = transfer_stat::get_ads_last_7_days_transfer($DB);
-
-    require_once(dirname(__FILE__) . '/../../dev_inc/ad_quote.class.php');
-    $adquote = ad_quote::get_ads_last_7_days_quote($DB);
-    $stat = array();
-    foreach ($transfer as $value) {
-      $stat[$value['ad_id']][floor((time() - strtotime($value['transfer_date'])) / 86400) - 1]['transfer'] = $value['transfer_total'];
-    }
-    foreach ($adquote as $value) {
-      $stat[$value['ad_id']][floor((time() - strtotime($value['quote_date'])) / 86400) - 1]['rmb'] = $value['rmb'];
-    }
-    $real = array();
-    foreach ($stat as $key => $value) {
-      for($i = 0; $i < 7; $i++) {
-        if ($value[$i]['transfer'] > 0 && $value[$i]['rmb'] > 0) {
-          $real[$key]['real'] = round($value[$i]['rmb'] / $value[$i]['transfer'] / 100, 2);
-          break;
-        }
-      }
-      if ($i > 3) {
-        $real[$key]['style'] = true;
-      }
-    }
+    // 取总投放量
+    $rmb_out = $ad_info->get_rmb_out_by_ad($DB, $adids);
 
     $ad_jobs = admin_ad_info::get_all_ad_job($DB);
 
     $channels = array();
     $ads = array();
     $result = array();
-    foreach ($res as $value) {
+    foreach ($res as $id => $value) {
       $ad_name = $value['ad_name'];
       $channel = $value['channel'];
       if (in_array($channel, $channels)) {
@@ -88,21 +63,17 @@ class ADController extends BaseController {
         $aid = count($ads);
         $ads[] = $ad_name;
       }
-      $id = $value['id'];
       $result[] = array_merge($value, array(
+        'id' => $id,
         'channel_id' => $cid,
         'aid' => $aid,
-        'has_channel' => (boolean)$channel,
         'packname' => str_replace('.', '-', $value['pack_name']),
         'class' => $value['ad_app_type'] == 1 ? 'Android' : 'iPhone',
-        'sdk_type' => $value['ad_sdk_type'] == 1 ? 'ad_list' : ($value['ad_sdk_type'] == 2 ? 'push' : 'wap'),
         'others' => $value['others'] != '' ? $value['others'] : '编辑注释',
-        'weight' => $value['weight'] / 100,
-        'real' => (float)$real[$id]['real'],
-        'real_style' => $real[$id]['style'],
         'today_left' => $value['step_rmb'] != 0 ? (int)($value['rmb'] / $value['step_rmb']) : 0,
         'job_num' => (int)$ad_jobs[$id]['jobnum'],
         'job_time' => date("H:i", strtotime($ad_jobs[$id]['jobtime'])),
+        'has_transfer' => $rmb_out[$id] > 0,
       ));
     }
 
