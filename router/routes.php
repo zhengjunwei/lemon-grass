@@ -30,6 +30,11 @@ Macaw::get(BASE . 'dashboard/', function () {
 
 Macaw::post(BASE . 'file/', 'BaseController@upload');
 
+Macaw::options(BASE . '(:all)', function () {
+  header('Access-Control-Allow-Headers: accept, content-type');
+  header('Access-Control-Allow-Methods: GET,PUT,POST,PATCH,DELETE');
+});
+
 Macaw::error(function() {
   echo '404 :: Not Found';
 });

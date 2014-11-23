@@ -30,7 +30,7 @@ class SQLHelper {
   private static function create_update_sql( $table, $attr, $id, $use_prepare = true ) {
     $fields = array();
     if ($use_prepare) {
-      foreach ( $attr as $key ) {
+      foreach ( $attr as $key => $value ) {
         $fields[] = "`$key`=:$key";
       }
     } else {
@@ -41,7 +41,7 @@ class SQLHelper {
     $fields = implode(', ', $fields);
     $sql = "UPDATE `$table`
             SET $fields
-            WHERE `id`=$id";
+            WHERE `id`='$id'";
     return $sql;
   }
 

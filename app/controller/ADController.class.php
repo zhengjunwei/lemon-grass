@@ -265,7 +265,7 @@ class ADController extends BaseController {
       return $this::send_apply($DB, $id, array_pick($attr, self::$FIELDS_APPLY));
     }
 
-    $attr = $this->validate($attr);
+    $attr = $this->validate($attr, $id);
     // 拆分不同表的数据
     $callback = array_pick($attr, self::$FIELDS_CALLBACK);
     $channel = array_pick($attr, self::$FIELDS_CHANNEL);
@@ -275,6 +275,7 @@ class ADController extends BaseController {
     $check = SQLHelper::update($DB, self::$T_INFO, $attr, $id);
     if (!$check) {
       $this->exit_with_error(30, '修改广告失败', 400);
+      var_dump(SQLHelper::$info);
     }
     //广告投放地理位置信息
     if (count($attr['provinces'])) {
@@ -305,11 +306,19 @@ class ADController extends BaseController {
         $this->exit_with_error(33, '修改Android回调信息失败', 400);
       }
     }
-    // 添加广告主后台信息.
-    $check = SQLHelper::update($DB, self::$T_SOURCE, $channel, $id);
-    if (!$check) {
-      $this->exit_with_error(34, '修改广告主后台信息失败', 400);
+    // 添加广告主后台信息
+    if ($channel) {
+      $check = SQLHelper::update($DB, self::$T_SOURCE, $channel, $id);
+      if (!$check) {
+        $this->exit_with_error(34, '修改广告主后台信息失败', 400);
+      }
     }
+
+    $this->output(array(
+      'code' => 0,
+      'msg' => '修改完成',
+      'data' => $attr,
+    ));
   }
 
   private function send_apply(PDO $DB, $id, $attr ) {
@@ -327,15 +336,17 @@ class ADController extends BaseController {
 
   /**
    * 校验用户修改的内容
+   *
    * @param array $attr
+   * @param string [optional] $id
    *
    * @return array
    */
-  private function validate(array $attr ) {
+  private function validate(array $attr, $id = '' ) {
     if ( array_key_exists('ad_text', $attr) && strlen( $attr['ad_text'] ) > 45 ) {
       $this->exit_with_error( 1, '广告语不能超过45个字符', 400 );
     }
-    if ( ! $attr['pack_name'] || ! $attr['ad_size'] || ! $attr['ad_lib'] ) {
+    if (!$id && (! $attr['pack_name'] || ! $attr['ad_size'] || ! $attr['ad_lib'] )) {
       $this->exit_with_error( 2, '广告包相关信息没有填全', 400 );
     }
     if ( array_key_exists('ad_app_type', $attr) && $attr['ad_app_type'] == 2 ) {
@@ -352,14 +363,22 @@ class ADController extends BaseController {
     }
 
     // 对数据进行预处理
-    if (in_array(0, $attr['net_type'])) {
-      $attr['net_type'] = 0;
-    } else {
-      $attr['net_type'] = implode(',', $attr['net_type']);
+    if ($attr['net_type']) {
+      if (in_array(0, $attr['net_type'])) {
+        $attr['net_type'] = 0;
+      } else {
+        $attr['net_type'] = implode(',', $attr['net_type']);
+      }
     }
-    $attr['seq_rmb'] = $attr['seq_rmb'] == '' ? (int)$attr['step_rmb'] : (int)$attr['seq_rmb'];
-    $attr['create_time'] = date('Y-m-d H:i:s');
-    $attr['open_url_type'] = $attr['feedback'] == 4 ? 0 : 1;
+    if ($attr['seq_rmb'] || $attr['step_rmb']) {
+      $attr['seq_rmb'] = $attr['seq_rmb'] == '' ? (int)$attr['step_rmb'] : (int)$attr['seq_rmb'];
+    }
+    if (!$id) {
+      $attr['create_time'] = date('Y-m-d H:i:s');
+    }
+    if ($attr['feedback']) {
+      $attr['open_url_type'] = $attr['feedback'] == 4 ? 0 : 1;
+    }
 
     return $attr;
   }

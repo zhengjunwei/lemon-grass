@@ -18,7 +18,7 @@ function array_pick($array) {
   $keys = array_flatten($keys);
   $pick = array();
   foreach ( $keys as $key ) {
-    if (array_key_exists($key, $array)) {
+    if (!array_key_exists($key, $array)) {
       continue;
     }
     $pick[$key] = $array[$key];
