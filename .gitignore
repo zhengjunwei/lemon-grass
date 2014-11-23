@@ -6,7 +6,7 @@
 /vendor/
 
 # DB
-inc/pdo*.*
+config/pdo*.*
 
 # test
 public/upload

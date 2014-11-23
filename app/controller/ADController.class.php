@@ -251,13 +251,14 @@ class ADController extends BaseController {
    * @author Meathill
    * @since 0.1.0
    * @param $id
+   * @param array [optional] $attr
    */
-  public function update($id) {
+  public function update($id, $attr = null) {
     $DB = $this->get_pdo_write();
     require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
     require dirname(__FILE__) . '/../../app/utils/array.php';
 
-    $attr = $this->get_post_data();
+    $attr = $attr ? $attr : $this->get_post_data();
 
     // 发申请
     if (array_key_exists('status', $attr) || array_key_exists('job_num', $attr)
@@ -321,15 +322,40 @@ class ADController extends BaseController {
     ));
   }
 
+  public function delete($id) {
+    $ad_info = $this->get_ad_info();
+    $DB = $this->get_pdo_read();
+
+    // 拒绝操作跑出量的广告
+    $rmb_out = $ad_info->get_rmb_out_by_ad($DB, $id);
+    if ($rmb_out[$id] > 0) {
+      $this->exit_with_error(50, '此广告已经推广，不能删除。您可以将其下线。', 400);
+    }
+
+    // 拒绝操作别人的广告
+    $me = $_SESSION['id'];
+    $check = $ad_info->check_ad_owner($DB, $id, $me);
+    if (!$check) {
+      $this->exit_with_error(51, '您无权操作此广告', 403);
+    }
+    $attr = array(
+      'status' => -1,
+    );
+    return $this->update($id, $attr);
+  }
+
   private function send_apply(PDO $DB, $id, $attr ) {
     $attr['userid'] = $_SESSION['id'];
     $attr['adid'] = $id;
+    $attr['create_time'] = date('Y-m-d H:i:s');
     $check = SQLHelper::insert($DB, self::$T_APPLY, $attr);
     if (!$check) {
-      $this->exit_with_error(40, '创建申请失败', 400);
+      $this->exit_with_error(40, '创建申请失败', 403);
     }
     return $this->output(array(
-
+      'code' => 0,
+      'msg' => 'apply received',
+      'data' => $attr,
     ));
   }
 

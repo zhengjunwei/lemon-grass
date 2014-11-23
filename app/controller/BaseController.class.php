@@ -10,6 +10,7 @@ class BaseController {
   static $HTTP_CODE = array(
     400 => 'Bad Request',
     401 => 'Unauthorized',
+    403 => 'Forbidden',
     422 => 'Unprocessable Entity',
   );
 

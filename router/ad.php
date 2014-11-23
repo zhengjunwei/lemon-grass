@@ -15,3 +15,9 @@ Macaw::get(BASE . 'ad/(:any)', 'ADController@init');
 Macaw::post(BASE . 'ad/', 'ADController@create');
 
 Macaw::patch(BASE . 'ad/(:any)', 'ADController@update');
+
+Macaw::delete(BASE . 'ad/(:any)', 'ADController@delete');
+
+Macaw::get(BASE . 'apply/', 'ApplyController@get_list');
+
+Macaw::delete(BASE . 'apply/(:any)', 'ApplyController@delete');

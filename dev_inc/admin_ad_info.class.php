@@ -9,8 +9,20 @@ include_once(dirname(__FILE__) . '/../inc/ad_info.class.php');
 require dirname(__FILE__) . '/../app/SQLHelper.class.php';
 
 class admin_ad_info extends ad_info {
+  /**
+   * 取广告信息
+   * @param PDO $DB
+   * @param $salesman
+   * @param string $start
+   * @param string $end
+   * @param string $keyword
+   * @param int $page_start
+   * @param int $pagesize
+   * @param string $order
+   * @return array
+   */
   public static function get_ad_info_by_owner(PDO $DB, $salesman, $start = '', $end = '',
-    $keyword = '', $page_start = 0, $pagesize = 10) {
+    $keyword = '', $page_start = 0, $pagesize = 10, $order = 'create_time') {
     if ($keyword) {
       $keyword = " AND (`ad_name` LIKE '%$keyword%' OR `channel` LIKE '%$keyword%') ";
     }
@@ -24,7 +36,7 @@ class admin_ad_info extends ad_info {
               `step_rmb`, `status`, `owner`, `channel`, `cid`
             FROM `t_adinfo` a LEFT JOIN `t_ad_source` b ON a.id=b.id
             WHERE owner='$salesman' AND status>=0 $start $end $keyword
-            ORDER BY `create_time` DESC
+            ORDER BY `$order` DESC
             LIMIT $page_start, $pagesize";
     return $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC|PDO::FETCH_UNIQUE);
   }
@@ -73,5 +85,17 @@ class admin_ad_info extends ad_info {
             FROM `t_adinfo_rmb`
             WHERE `id` IN ('$adids')";
     return $DB->query($sql)->fetchAll(PDO::FETCH_COLUMN | PDO::FETCH_UNIQUE);
+  }
+
+  public function check_ad_owner(PDO $DB, $id, $me) {
+    $sql = "SELECT 'x'
+            FROM `t_adinfo` i LEFT JOIN `t_ad_source` s ON i.id=s.id
+            WHERE `id`=:id AND owner=:me";
+    $state = $DB->prepare($sql);
+    $state->execute(array(
+      ':id' => $id,
+      ':me' => $me,
+    ));
+    return $state->fetchColumn();
   }
 }
