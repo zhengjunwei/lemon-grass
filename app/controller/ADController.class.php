@@ -43,6 +43,22 @@ class ADController extends BaseController {
     // 取总投放量
     $rmb_out = $ad_info->get_rmb_out_by_ad($DB, $adids);
 
+    // 取当前申请
+    $apply = new \diy\service\Apply();
+    $applies = $apply->get_list_by_id($adids);
+    $applies_by_ad = array();
+    foreach ( $applies as $id => $apply ) {
+      $adid = $apply['adid'];
+      if (!is_array($applies_by_ad[$adid])) {
+        $applies_by_ad[$adid] = array();
+      }
+      unset($apply['adid']);
+      $apply = array_filter($apply);
+      $key = array_keys($apply)[0]; // 因为过滤掉了没有内容的键，又删掉了adid，只剩下要操作的key了
+      $apply[$key . '_id'] = $id;
+      $applies_by_ad[$adid][] = array_filter($apply);
+    }
+
     $ad_jobs = admin_ad_info::get_all_ad_job($DB);
 
     $channels = array();
@@ -63,7 +79,21 @@ class ADController extends BaseController {
         $aid = count($ads);
         $ads[] = $ad_name;
       }
-      $result[] = array_merge($value, array(
+
+      $apply = array();
+      if (is_array($applies_by_ad[$id])) {
+        foreach ( $applies_by_ad[$id] as $item ) {
+          if (array_key_exists('set_rmb', $item)) {
+            $item = array(
+              'set_today_left_id' => $item['set_rmb_id'],
+              'set_today_left' => $value['step_rmb'] != 0 ? $item['set_rmb'] / $value['step_rmb'] : 0,
+            );
+          }
+          $apply = array_merge($apply, $item);
+        }
+      }
+
+      $result[] = array_merge($value, $apply, array(
         'id' => $id,
         'channel_id' => $cid,
         'aid' => $aid,
@@ -322,6 +352,10 @@ class ADController extends BaseController {
     ));
   }
 
+  /**
+   * 删除广告
+   * @param $id
+   */
   public function delete($id) {
     $ad_info = $this->get_ad_info();
     $DB = $this->get_pdo_read();
@@ -338,21 +372,46 @@ class ADController extends BaseController {
     if (!$check) {
       $this->exit_with_error(51, '您无权操作此广告', 403);
     }
+
     $attr = array(
       'status' => -1,
     );
     return $this->update($id, $attr);
   }
 
-  private function send_apply(PDO $DB, $id, $attr ) {
-    $attr['userid'] = $_SESSION['id'];
-    $attr['adid'] = $id;
-    $attr['create_time'] = date('Y-m-d H:i:s');
+  /**
+   * 发送申请
+   * @param PDO $DB
+   * @param $id
+   * @param array $changed
+   */
+  private function send_apply(PDO $DB, $id, array $changed ) {
+    $attr = array(
+      'userid' => $_SESSION['id'],
+      'adid' => $id,
+      'create_time' => date('Y-m-d H:i:s'),
+    );
+
+    // 对同一属性的修改不能同时有多个
+    $service = new \diy\service\Apply();
+    foreach ( $changed as $key => $value) {
+      if ($key == 'today_left') { // 今日余量需转换成rmb
+        $key = 'rmb';
+        $DB = $this->get_pdo_read();
+        $step_rmb = SQLHelper::get_attr($DB, self::$T_INFO, $id, 'step_rmb');
+        $value = (int)$value * (int)$step_rmb;
+      }
+      $key = 'set_' . $key;
+      if ($service->is_available_same_attr($id, $key)) {
+        $this->exit_with_error(41, '该属性上次修改申请还未审批，不能再次修改', 400);
+      }
+      $attr[$key] = $value;
+    }
     $check = SQLHelper::insert($DB, self::$T_APPLY, $attr);
     if (!$check) {
       $this->exit_with_error(40, '创建申请失败', 403);
     }
-    return $this->output(array(
+    $this->output(array(
       'code' => 0,
       'msg' => 'apply received',
       'data' => $attr,
@@ -362,10 +421,8 @@ class ADController extends BaseController {
 
   /**
    * 校验用户修改的内容
-   *
    * @param array $attr
    * @param string [optional] $id
-   *
    * @return array
    */
   private function validate(array $attr, $id = '' ) {

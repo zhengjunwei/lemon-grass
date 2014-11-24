@@ -70,4 +70,16 @@ class SQLHelper {
     self::$info = $state->errorInfo();
     return $result;
   }
+
+  public static function get_attr( PDO $DB, $table, $id ) {
+    $keys = array_slice(func_get_args(), 3);
+    $is_single = count($keys) === 1;
+    $keys = implode('`, `', $keys);
+    $sql = "SELECT `$keys`
+            FROM `$table`
+            WHERE `id`=:id";
+    $state = $DB->prepare($sql);
+    $state->execute(array(':id' => $id));
+    return $state->fetch($is_single ? PDO::FETCH_COLUMN : PDO::FETCH_ASSOC);
+  }
 }
