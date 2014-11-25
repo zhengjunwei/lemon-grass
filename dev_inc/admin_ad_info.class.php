@@ -51,7 +51,7 @@ class admin_ad_info extends ad_info {
    * @param $end
    * @param string $keyword
    *
-   * @return string $int
+   * @return int $int
    */
   public static function get_ad_number_by_owner(PDO $DB, $salesman, $start = '', $end = '', $keyword = '') {
     if ($keyword) {
@@ -66,7 +66,7 @@ class admin_ad_info extends ad_info {
     $sql = "SELECT COUNT('X')
             FROM `t_adinfo` a LEFT JOIN `t_ad_source` s ON a.`id`=s.`id`
             WHERE `owner`=$salesman AND `status`>=0 $start $end $keyword";
-    return $DB->query($sql)->fetchColumn();
+    return (int)$DB->query($sql)->fetchColumn();
   }
 
   public static function get_all_ad_job(PDO $DB) {
@@ -77,6 +77,23 @@ class admin_ad_info extends ad_info {
               AND `jobnum`>0 AND `jobtime`<'$the_day_after_tomorrow'
             GROUP BY ad_id";
     return $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC|PDO::FETCH_UNIQUE|PDO::FETCH_GROUP);
+  }
+
+  public static function get_adids_by_owner(PDO $DB, $me, $start = '' ) {
+    IF ($start) {
+      $start = " AND `create_time`>='$start'";
+    }
+    $sql = "SELECT a.`id`
+            FROM `t_adinfo` a LEFT JOIN `t_ad_source` s ON a.`id`=s.`id`
+            WHERE `status`>=0 AND `owner`=$me $start";
+    return $DB->query($sql)->fetchAll(PDO::FETCH_COLUMN);
+  }
+
+  public static function get_ad_online_number_by_owner( PDO $DB, $me ) {
+    $sql = "SELECT COUNT('X')
+            FROM `t_adinfo` a LEFT JOIN `t_ad_source` s ON a.`id`=s.`id`
+            WHERE `status`=0 AND `owner`=$me";
+    return (int)$DB->query($sql)->fetchColumn();
   }
 
   public function get_rmb_out_by_ad(PDO $DB, $adids ) {

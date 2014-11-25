@@ -426,6 +426,11 @@ class ADController extends BaseController {
    * @return array
    */
   private function validate(array $attr, $id = '' ) {
+    // 防XSS
+    foreach ( $attr as $key => $value ) {
+      $attr[$key] = htmlspecialchars(trim(strip_tags($value), ENT_QUOTES | ENT_HTML5));
+    }
+
     if ( array_key_exists('ad_text', $attr) && strlen( $attr['ad_text'] ) > 45 ) {
       $this->exit_with_error( 1, '广告语不能超过45个字符', 400 );
     }

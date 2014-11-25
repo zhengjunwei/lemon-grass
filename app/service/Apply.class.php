@@ -104,7 +104,7 @@ class Apply extends Base {
     $DB = $this->get_read_pdo();
     $sql = "SELECT 'X'
             FROM `" . self::$TABLE . "`
-            WHERE `adid`=:adid AND `$attr`!=''";
+            WHERE `adid`=:adid AND `$attr` IS NOT NULL";
     $state = $DB->prepare($sql);
     $state->execute(array(':adid' => $adid));
     return $state->fetchColumn();
