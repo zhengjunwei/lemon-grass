@@ -104,7 +104,7 @@ class ADController extends BaseController {
         'job_num' => (int)$ad_jobs[$id]['jobnum'],
         'job_time' => date("H:i", strtotime($ad_jobs[$id]['jobtime'])),
         'has_transfer' => $rmb_out[$id] > 0,
-        'is_ready' => $value['status'] == 1 || $value['status'] == 2,
+        'is_ready' => $value['status'] == 1 || $value['status'] == 0,
       ));
     }
 
