@@ -7,7 +7,7 @@
  */
 
 class SQLHelper {
-  static $info = null;
+  static $info = '';
 
   public static function create_insert_sql($table, $array, $use_prepare = true) {
     $keys = array_keys($array);

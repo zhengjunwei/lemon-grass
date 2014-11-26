@@ -12,8 +12,8 @@ class ADController extends BaseController {
   static $T_SOURCE = 't_ad_source';
   static $T_INFO = 't_adinfo';
   public static $T_APPLY = 't_diy_apply';
-  static $FIELDS_CALLBACK = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type', 'open_url_type', 'salt', 'click_url', 'ip');
-  static $FIELDS_CHANNEL = array('channel', 'channel_id', 'owner', 'channel_url', 'channel_user', 'channel_pwd', 'feedback', 'cycle');
+  static $FIELDS_CALLBACK = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type', 'open_url_type');
+  static $FIELDS_CHANNEL = array('channel', 'cid', 'owner', 'url', 'user', 'pwd', 'feedback', 'cycle');
   static $FIELDS_APPLY = array('status', 'today_left', 'job_num');
 
   private function get_ad_info() {
@@ -104,6 +104,7 @@ class ADController extends BaseController {
         'job_num' => (int)$ad_jobs[$id]['jobnum'],
         'job_time' => date("H:i", strtotime($ad_jobs[$id]['jobtime'])),
         'has_transfer' => $rmb_out[$id] > 0,
+        'is_ready' => $value['status'] == 1 || $value['status'] == 2,
       ));
     }
 
@@ -215,6 +216,7 @@ class ADController extends BaseController {
     require dirname(__FILE__) . '/../../app/utils/array.php';
 
     $id = $CM->id1();
+    $me = $_SESSION['id'];
     $attr = $this->get_post_data();
 
     $attr = $this->validate( $attr );
@@ -224,11 +226,13 @@ class ADController extends BaseController {
     $channel = array_pick($attr, self::$FIELDS_CHANNEL);
     $attr = array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, 'total_num');
     $attr['id'] = $callback['id'] = $channel['id'] = $id;
+    $attr['status'] = 2; // 新建，待审核
+    $attr['create_user'] = $channel['owner'] = $me;
 
     // 插入广告信息
     $check = SQLHelper::insert($DB, self::$T_INFO, $attr);
     if (!$check) {
-      $this->exit_with_error(20, '插入广告失败', 400);
+      $this->exit_with_error(20, '插入广告失败', 400, SQLHelper::$info);
     }
     //广告投放地理位置信息
     if (count($attr['provinces'])) {
@@ -261,7 +265,7 @@ class ADController extends BaseController {
     // 添加广告主后台信息.
     $check = SQLHelper::insert($DB, self::$T_SOURCE, $channel);
     if (!$check) {
-      $this->exit_with_error(24, '插入广告主后台信息失败', 400);
+      $this->exit_with_error(24, '插入广告主后台信息失败', 400, SQLHelper::$info);
     }
 
     $this->output(array(
@@ -428,7 +432,7 @@ class ADController extends BaseController {
   private function validate(array $attr, $id = '' ) {
     // 防XSS
     foreach ( $attr as $key => $value ) {
-      $attr[$key] = htmlspecialchars(trim(strip_tags($value), ENT_QUOTES | ENT_HTML5));
+      $attr[$key] = htmlspecialchars(trim(strip_tags($value, ENT_QUOTES | ENT_HTML5)));
     }
 
     if ( array_key_exists('ad_text', $attr) && strlen( $attr['ad_text'] ) > 45 ) {

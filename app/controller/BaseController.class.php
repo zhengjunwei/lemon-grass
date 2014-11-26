@@ -33,12 +33,13 @@ class BaseController {
     return json_decode($request, true);
   }
 
-  protected function exit_with_error($code, $msg, $http_code) {
+  protected function exit_with_error($code, $msg, $http_code, $debug = '') {
     header('Content-type: application/JSON; charset=UTF-8');
     header("HTTP/1.1 $http_code " . self::$HTTP_CODE[$http_code]);
     exit(json_encode(array(
       'code' => $code,
       'msg' => $msg,
+      'debug' => $debug,
     )));
   }
   protected function output($result) {
@@ -169,5 +170,16 @@ class BaseController {
     }
 
     $this->output($result);
+  }
+
+  public function on_options() {
+    header('Access-Control-Allow-Headers: accept, content-type');
+    header('Access-Control-Allow-Methods: GET,PUT,POST,PATCH,DELETE');
+
+    exit(json_encode(array(
+      'code' => 0,
+      'method' => 'options',
+      'msg' => 'ready',
+    )));
   }
 } 
