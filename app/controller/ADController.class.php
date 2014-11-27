@@ -13,7 +13,7 @@ class ADController extends BaseController {
   static $T_INFO = 't_adinfo';
   public static $T_APPLY = 't_diy_apply';
   static $FIELDS_CALLBACK = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type', 'open_url_type');
-  static $FIELDS_CHANNEL = array('channel', 'cid', 'owner', 'url', 'user', 'pwd', 'feedback', 'cycle');
+  static $FIELDS_CHANNEL = array('channel', 'cid', 'url', 'user', 'pwd', 'feedback', 'cycle');
   static $FIELDS_APPLY = array('status', 'today_left', 'job_num');
 
   private function get_ad_info() {
@@ -268,9 +268,18 @@ class ADController extends BaseController {
       $this->exit_with_error(24, '插入广告主后台信息失败', 400, SQLHelper::$info);
     }
 
+    // 给运营发通知
+    $notice = new Notification();
+    $notice_status = $notice->send(array(
+      'ad_id' => $id,
+      'alarm_type' => Notification::$NEW_AD,
+      'create_time' => date('Y-m-d H:i:s'),
+    ));
+
     $this->output(array(
       'code' => 0,
       'msg' => 'created',
+      'notice' => $notice_status ? '通知已发' : '通知失败',
       'ad' => array(
         'id' => $id
       ),
@@ -390,10 +399,11 @@ class ADController extends BaseController {
    * @param array $changed
    */
   private function send_apply(PDO $DB, $id, array $changed ) {
+    $now = date('Y-m-d H:i:s');
     $attr = array(
       'userid' => $_SESSION['id'],
       'adid' => $id,
-      'create_time' => date('Y-m-d H:i:s'),
+      'create_time' => $now,
     );
 
     // 对同一属性的修改不能同时有多个
@@ -415,9 +425,19 @@ class ADController extends BaseController {
     if (!$check) {
       $this->exit_with_error(40, '创建申请失败', 403);
     }
+
+    // 给运营发通知
+    $notice = new Notification();
+    $notice_status = $notice->send(array(
+      'ad_id' => $id,
+      'alarm_type' => Notification::$EDIT_AD,
+      'create_time' => $now,
+    ));
+
     $this->output(array(
       'code' => 0,
       'msg' => 'apply received',
+      'notice' => $notice_status ? '通知已发' : '通知失败',
       'data' => $attr,
     ));
   }
