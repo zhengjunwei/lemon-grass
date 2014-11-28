@@ -39,7 +39,7 @@ class UserController extends BaseController {
 
     $password = md5($password .$username);
     $pdo = $this->get_pdo_read();
-    $sql = "SELECT `id`,`QQ`,`permission`,`associate`
+    $sql = "SELECT `id`,`QQ`,`permission`,`NAME`,`associate`
             FROM `t_admin`
             WHERE `username`=:username AND `password`=:password AND `status`=1";
     $stat = $pdo->prepare($sql);
@@ -58,7 +58,7 @@ class UserController extends BaseController {
     $_SESSION['user'] = $username;
     $_SESSION['id'] = $admin['id'];
     $_SESSION['role'] = $admin['permission'];
-    $_SESSION['fullname'] = $admin['fullname'];
+    $_SESSION['fullname'] = $admin['NAME'];
     $result = array(
       'code' => 0,
       'msg' => '登录成功',
@@ -73,6 +73,10 @@ class UserController extends BaseController {
   }
 
   public function logout() {
-
+    $_SESSION['id'] = $_SESSION['fullname'] = $_SESSION['role'] = '';
+    $this->output(array(
+      'code' => 0,
+      'msg' => 'logout',
+    ));
   }
 } 
