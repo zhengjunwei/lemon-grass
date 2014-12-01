@@ -12,4 +12,6 @@ Macaw::get(BASE . 'user/', 'UserController@get_info');
 
 Macaw::post(BASE . 'user/', 'UserController@login');
 
+Macaw::options(BASE . 'user/', 'BaseController@on_options');
+
 Macaw::delete(BASE . 'user/', 'UserController@logout');

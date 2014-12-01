@@ -57,7 +57,7 @@ class BaseController {
     $type = isset($_REQUEST['name']) ? $_REQUEST['name'] : 'ad_url';
     $upload_user = $_SESSION['id'];
 
-    $uppath = $CM->uppath[$type];
+    $uppath = isset($CM->uppath[$type]) ? $CM->uppath[$type] : 'upload/';
     $dir = $uppath . date("Ym") . '/';
     if (!is_dir($dir)) {
       mkdir($dir, 0777, TRUE);

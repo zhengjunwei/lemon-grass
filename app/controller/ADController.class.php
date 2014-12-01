@@ -140,7 +140,6 @@ class ADController extends BaseController {
       'net_type' => 0,
       'put_jb' => 0,
       'put_ipad' => 0,
-      'owner' => -1,
       'feedback' => 0,
       'cycle' => 0,
       'salt' => substr(md5(time()), 0, 8),
@@ -217,6 +216,7 @@ class ADController extends BaseController {
 
     $id = $CM->id1();
     $me = $_SESSION['id'];
+    $now = date('Y-m-d H:i:s');
     $attr = $this->get_post_data();
 
     $attr = $this->validate( $attr );
@@ -228,6 +228,7 @@ class ADController extends BaseController {
     $attr['id'] = $callback['id'] = $channel['id'] = $id;
     $attr['status'] = 2; // 新建，待审核
     $attr['create_user'] = $channel['owner'] = $me;
+    $attr['create_time'] = $now;
 
     // 插入广告信息
     $check = SQLHelper::insert($DB, self::$T_INFO, $attr);
@@ -273,7 +274,7 @@ class ADController extends BaseController {
     $notice_status = $notice->send(array(
       'ad_id' => $id,
       'alarm_type' => Notification::$NEW_AD,
-      'create_time' => date('Y-m-d H:i:s'),
+      'create_time' => $now,
     ));
 
     $this->output(array(
