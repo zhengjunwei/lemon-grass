@@ -279,7 +279,7 @@ class ADController extends BaseController {
 
     $this->output(array(
       'code' => 0,
-      'msg' => 'created',
+      'msg' => '创建广告成功。相关通知' . ($notice_status ? '已发' : '失败'),
       'notice' => $notice_status ? '通知已发' : '通知失败',
       'ad' => array(
         'id' => $id
