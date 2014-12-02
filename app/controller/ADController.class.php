@@ -225,7 +225,7 @@ class ADController extends BaseController {
     $callback = array_pick($attr, self::$FIELDS_CALLBACK);
     $channel = array_pick($attr, self::$FIELDS_CHANNEL);
     $attr = array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, 'total_num');
-    $attr['id'] = $callback['id'] = $channel['id'] = $id;
+    $attr['id'] = $callback['ad_id'] = $channel['id'] = $id;
     $attr['status'] = 2; // 新建，待审核
     $attr['create_user'] = $channel['owner'] = $me;
     $attr['create_time'] = $now;
@@ -254,10 +254,11 @@ class ADController extends BaseController {
     if ($attr['ad_app_type'] == 2) {
       $check = SQLHelper::insert($DB, self::$T_IOS_INFO, $callback);
       if (!$check) {
-        $this->exit_with_error(22, '插入iOS专属数据失败', 400);
+        $this->exit_with_error(22, '插入iOS专属数据失败', 400, SQLHelper::$info);
       }
     } else if ($callback['click_url']) { // 有回调再插入
-      $callback = array_pick($callback, 'id', 'salt', 'click_url', 'ip');
+      $callback = array_pick($callback, 'salt', 'click_url', 'ip');
+      $callback['id'] = $id;
       $check = SQLHelper::insert($DB, self::$T_CALLBACK, $callback);
       if (!$check) {
         $this->exit_with_error(23, '插入Android回调信息失败', 400);
