@@ -16,7 +16,7 @@ Macaw::get(BASE . 'dashboard/', function () {
   $week_ago = date('Y-m-d H:i:s', time() - 691200);
   $month_ago = date('Y-m-d H:i:s', time() - 2678400);
   $yesterday = date('Y-m-d H:i:s', time() - 86400);
-  $me = defined('DEBUG') ? DEBUG : $_SESSION['id'];
+  $me = $_SESSION['id'];
 
   // 取在线广告数
   $ad = admin_ad_info::get_ad_online_number_by_owner($DB, $me);

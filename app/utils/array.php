@@ -38,3 +38,24 @@ function array_omit($array) {
   }
   return $pick;
 }
+
+/**
+ * 以递归的形式遍历一个数组，审查每一个对象
+ * @param $array
+ * @return array
+ */
+function array_strip_tags($array) {
+  $result = array();
+
+  foreach ( $array as $key => $value ) {
+    $key = strip_tags($key);
+
+    if (is_array($value)) {
+      $result[$key] = array_strip_tags($value);
+    } else {
+      $result[$key] = htmlspecialchars(trim(strip_tags($value, ENT_QUOTES | ENT_HTML5)));
+    }
+  }
+
+  return $result;
+}

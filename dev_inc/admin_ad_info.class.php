@@ -115,4 +115,24 @@ class admin_ad_info extends ad_info {
     ));
     return $state->fetchColumn();
   }
+
+  public function get_ad_info_by_id(PDO $DB, $id ) {
+    $sql = "SELECT a.*, `owner`, `channel`, `cid`
+            FROM `t_adinfo` a LEFT JOIN `t_ad_source` b ON a.id=b.id
+            WHERE a.`id`=:id";
+    $state = $DB->prepare($sql);
+    $state->execute(array(':id' => $id));
+    return $state->fetch(PDO::FETCH_ASSOC);
+  }
+
+  public function select_upload_log(PDO $DB, $id) {
+    $sql = "SELECT *
+            FROM `t_upload_log`
+            WHERE `id`=:id AND `type`='ad_url'
+            ORDER BY upload_time DESC";
+    $state = $DB->prepare($sql);
+    $state->execute(array(':id' => $id));
+    return $state->fetchAll(PDO::FETCH_ASSOC);
+  }
+
 }

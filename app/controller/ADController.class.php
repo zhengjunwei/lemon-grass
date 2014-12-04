@@ -175,23 +175,29 @@ class ADController extends BaseController {
         'options' => $options,
       ));
     }
+
+    require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
     // 广告内容
-    $res = $ad_info->get_ad_by_id($DB, $id);
+    $res = $ad_info->get_ad_info_by_id($DB, $id);
     $ad_shoot = preg_replace('/^,|,$/', '', $res['ad_shoot']);
 
     // 上传文件记录
-    $upload_log = $ad_info->select_upload_log($id, $DB);
+    $upload_log = $ad_info->select_upload_log($DB, $id);
 
-    // 取广告主后台信息
-    $channel = $ad_info->select_ad_source($id, $DB);
-    $channel['owner'] = $channel['owner'] ? $channel['owner'] : 1;
+    // 省份
+    if ($res['province_type'] == 1) {
+      $provinces = admin_location::get_provinces_by_ad($DB, $id);
+      foreach ( $options['provinces'] as $key => $province ) {
+        $options['provinces'][$key]['checked'] = in_array($province['key'], $provinces) ? 'checked' : '';
+      }
+    }
 
     $options = array_merge($options, array(
       'apk_history' => $upload_log,
       'ad_url_full' => (substr($res['ad_url'], 0, 7) == 'upload/' ? 'http://www.dianjoy.com/dev/' : '') . $res['ad_url'],
       'shoots' => array_filter(preg_split('/,{2,}/', $ad_shoot)),
     ));
-    $result = array_merge(init, $res, (array)$channel, array(
+    $result = array_merge($init, $res, array(
 
     ));
 
@@ -207,8 +213,12 @@ class ADController extends BaseController {
    * 创建新广告
    * @author Meathill
    * @since 0.1.0
+   * @param string $key
    */
-  public function create() {
+  public function create($key) {
+    if ($key != 'init') {
+      $this->exit_with_error(10, '请求错误', 400);
+    }
     $DB = $this->get_pdo_write();
     $CM = $this->get_cm();
     require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
@@ -230,25 +240,18 @@ class ADController extends BaseController {
     $attr['create_user'] = $channel['owner'] = $me;
     $attr['create_time'] = $now;
 
+    //广告投放地理位置信息
+    if (count($attr['provinces'])) {
+      $check = admin_location::insert_ad_province($DB, $id, $attr['provinces']);
+      if (!$check) {
+        $this->exit_with_error(21, '插入投放地理位置失败', 400);
+      }
+    }
+    unset($attr['provinces']);
     // 插入广告信息
     $check = SQLHelper::insert($DB, self::$T_INFO, $attr);
     if (!$check) {
       $this->exit_with_error(20, '插入广告失败', 400, SQLHelper::$info);
-    }
-    //广告投放地理位置信息
-    if (count($attr['provinces'])) {
-      $values = array();
-      $params = array();
-      $count = 0;
-      foreach ($attr['provinces'] as $province_id) {
-        $values[] = "('$id',':province$count')";
-        $params[":province$count"] = $province_id;
-      }
-      $values = implode(',', $values);
-      $check = admin_location::insert_ad_province($DB, $values, $params);
-      if (!$check) {
-        $this->exit_with_error(21, '插入投放地理位置失败', 400);
-      }
     }
     // 记录平台专属数据
     if ($attr['ad_app_type'] == 2) {
@@ -326,15 +329,7 @@ class ADController extends BaseController {
     //广告投放地理位置信息
     if (count($attr['provinces'])) {
       admin_location::del_by_ad($DB, $id);
-      $values = array();
-      $params = array();
-      $count = 0;
-      foreach ($attr['provinces'] as $province_id) {
-        $values[] = "('$id',':province$count')";
-        $params[":province$count"] = $province_id;
-      }
-      $values = implode(',', $values);
-      $check = admin_location::insert_ad_province($DB, $values, $params);
+      $check = admin_location::insert_ad_province($DB, $id, $attr['provinces']);
       if (!$check) {
         $this->exit_with_error(31, '修改投放地理位置失败', 400);
       }
@@ -453,9 +448,7 @@ class ADController extends BaseController {
    */
   private function validate(array $attr, $id = '' ) {
     // 防XSS
-    foreach ( $attr as $key => $value ) {
-      $attr[$key] = htmlspecialchars(trim(strip_tags($value, ENT_QUOTES | ENT_HTML5)));
-    }
+    $attr = array_strip_tags($attr);
 
     if ( array_key_exists('ad_text', $attr) && strlen( $attr['ad_text'] ) > 45 ) {
       $this->exit_with_error( 1, '广告语不能超过45个字符', 400 );

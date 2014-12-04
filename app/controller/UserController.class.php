@@ -52,7 +52,7 @@ class UserController extends BaseController {
       $this->exit_with_error(3, '用户名或密码错误', 400);
     }
     // 只向技术和商务开放
-    if (!in_array((int)$admin['permission'], array(0, 5, 6))) {
+    if (!in_array((int)$admin['permission'], array(0, 1, 5, 6))) {
       $this->exit_with_error(4, '暂时只向商务开放', 400);
     }
     $_SESSION['user'] = $username;

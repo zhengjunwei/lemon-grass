@@ -10,11 +10,11 @@ use NoahBuscher\Macaw\Macaw;
 
 Macaw::get(BASE . 'ad/', 'ADController@get_list');
 
-Macaw::options(BASE . 'ad/', 'BaseController@on_options');
-
 Macaw::get(BASE . 'ad/(:any)', 'ADController@init');
 
-Macaw::post(BASE . 'ad/', 'ADController@create');
+Macaw::options(BASE . 'ad/(:any)', 'BaseController@on_options');
+
+Macaw::post(BASE . 'ad/(:any)', 'ADController@create');
 
 Macaw::patch(BASE . 'ad/(:any)', 'ADController@update');
 
