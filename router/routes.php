@@ -11,7 +11,7 @@ Macaw::get(BASE . '', 'HomeController@home');
 
 Macaw::get(BASE . 'dashboard/', function () {
   require dirname(__FILE__) . '/../dev_inc/admin_ad_info.class.php';
-  $DB = require dirname(__FILE__) . '/../config/pdo_test.php';
+  $DB = require dirname(__FILE__) . '/../inc/pdo_slave.php';
 
   $week_ago = date('Y-m-d H:i:s', time() - 691200);
   $month_ago = date('Y-m-d H:i:s', time() - 2678400);

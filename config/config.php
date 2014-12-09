@@ -8,3 +8,4 @@
 
 define('DEBUG', 4); // 4为小芳的id
 define('BASE', '/');
+define('UPLOAD_BASE', ''); // 上传文件保存路径

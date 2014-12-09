@@ -19,10 +19,10 @@ class BaseController {
   }
 
   protected function get_pdo_read() {
-    return require dirname(__FILE__) . '/../../config/pdo_test.php';
+    return require dirname(__FILE__) . '/../../inc/pdo_slave.php';
   }
   protected function get_pdo_write() {
-    return require dirname(__FILE__) . '/../../config/pdo_test.php';
+    return require dirname(__FILE__) . '/../../inc/pdo.php';
   }
   protected function get_cm() {
     require dirname(__FILE__) . '/../../inc/cm.class.php';
@@ -58,7 +58,7 @@ class BaseController {
     $upload_user = $_SESSION['id'];
 
     $uppath = isset($CM->uppath[$type]) ? $CM->uppath[$type] : 'upload/';
-    $dir = $uppath . date("Ym") . '/';
+    $dir = UPLOAD_BASE . $uppath . date("Ym") . '/';
     if (!is_dir($dir)) {
       mkdir($dir, 0777, TRUE);
     }

@@ -29,7 +29,7 @@ class ADController extends BaseController {
   public function get_list() {
     $DB = $this->get_pdo_read();
     $ad_info =  $this->get_ad_info();
-    $me = defined('DEBUG') ? DEBUG : $_SESSION['id'];
+    $me = $_SESSION['id'];
 
     $keyword = isset($_REQUEST['$keyword']) ? $_REQUEST['$keyword'] : FALSE;
     $pagesize = isset($_REQUEST['pagesize']) ? (int)$_REQUEST['pagesize'] : 10;

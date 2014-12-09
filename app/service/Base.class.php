@@ -22,7 +22,7 @@ class Base {
    * @return PDO
    */
   protected function get_read_pdo() {
-    $DB = $this->DB ? $this->DB : require dirname(__FILE__) . '/../../config/pdo_test.php';
+    $DB = $this->DB ? $this->DB : require dirname(__FILE__) . '/../../inc/pdo_slave.php';
     return $DB;
   }
 
@@ -30,7 +30,7 @@ class Base {
    * @return PDO
    */
   protected function get_write_pdo() {
-    $DB = $this->DB_write ? $this->DB_write : require dirname(__FILE__) . '/../../config/pdo_test.php';
+    $DB = $this->DB_write ? $this->DB_write : require dirname(__FILE__) . '/../../inc/pdo.php';
     return $DB;
   }
 
