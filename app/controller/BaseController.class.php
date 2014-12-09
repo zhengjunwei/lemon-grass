@@ -50,7 +50,7 @@ class BaseController {
   public function upload() {
     require(dirname(__FILE__) . "/../../inc/cm.class.php");
     $CM = new CM;
-    $DB = require(dirname(__FILE__) . "/../../config/pdo_test.php");
+    $DB = require(dirname(__FILE__) . "/../../inc/pdo.php");
 
     $file = $_FILES['file'];
     $id = isset($_REQUEST['id']) && $_REQUEST['id'] != '' && $_REQUEST['id'] != 'undefined' ? $_REQUEST['id'] : $CM->id1();
