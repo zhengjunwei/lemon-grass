@@ -140,8 +140,7 @@ class BaseController {
       'code' => 0,
       'msg' => 'uploaded',
       'id' => $id,
-      'url' => $new_path,
-
+      'url' => str_replace(UPLOAD_BASE, UPLOAD_URL, $new_path),
     );
 
     require dirname(__FILE__) . '/../../app/utils/functions.php';
