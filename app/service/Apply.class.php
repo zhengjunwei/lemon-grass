@@ -18,6 +18,7 @@ class Apply extends Base {
   const ACCEPTED = 1;
   const DECLINED = 2;
   const WITHDRAWN = 3;
+  const EXPIRED = 4;
 
   public function get_ad_attr( $adid, $key ) {
     $DB = $this->get_read_pdo();
@@ -36,7 +37,7 @@ class Apply extends Base {
               `ad_name`, `channel`, `cid`
             FROM `" . self::$TABLE . "` a LEFT JOIN `t_adinfo` i ON a.`adid`=i.`id`
               LEFT JOIN `t_ad_source` c ON a.`adid`=c.`id`
-            WHERE `userid`='$userid' AND a.`status`!=" . self::WITHDRAWN . " $keyword_sql
+            WHERE `userid`='$userid' AND a.`status`<" . self::WITHDRAWN . " $keyword_sql
             ORDER BY `create_time` DESC
             LIMIT $start, $pagesize";
     if ($keyword) {

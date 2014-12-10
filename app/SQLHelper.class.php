@@ -33,22 +33,50 @@ class SQLHelper {
       foreach ( $attr as $key => $value ) {
         $fields[] = "`$key`=:$key";
       }
+      if (is_array($id)) {
+        $count = 0;
+        $ids = array();
+        foreach ( $id as $value ) {
+          $ids[] = ':id' . $count;
+          $count++;
+        }
+        $id_sql = implode(',', $ids);
+        $id_sql = "IN ($id_sql)";
+      } else {
+        $id_sql = '=:id';
+      }
     } else {
       foreach ( $attr as $key => $value ) {
         $fields[] = "`$key`='$value'";
+      }
+      if (is_array($id)) {
+        $id_sql = implode("','", $id);
+        $id_sql = "IN ('$id_sql')";
+      } else {
+        $id_sql = "='$id'";
       }
     }
     $fields = implode(', ', $fields);
     $sql = "UPDATE `$table`
             SET $fields
-            WHERE `id`='$id'";
+            WHERE `id`$id_sql";
     return $sql;
   }
 
-  public static function get_parameters($array) {
+  public static function get_parameters($array, $id = null) {
     $params = array();
     foreach ( $array as $key => $value ) {
       $params[":$key"] = $value;
+    }
+    if ($id) {
+      if (is_array($id)) {
+        $count = 0;
+        foreach ( $id as $value ) {
+          $params[":id$count"] = $value;
+        }
+      } else {
+        $params[':id'] = $id;
+      }
     }
     return $params;
   }
@@ -64,7 +92,7 @@ class SQLHelper {
 
   public static function update( PDO $DB, $table, $attr, $id ) {
     $sql = self::create_update_sql($table, $attr, $id);
-    $params = self::get_parameters($attr);
+    $params = self::get_parameters($attr, $id);
     $state = $DB->prepare($sql);
     $result = $state->execute($params);
     self::$info = $state->errorInfo();

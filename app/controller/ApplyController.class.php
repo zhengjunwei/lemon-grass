@@ -28,13 +28,14 @@ class ApplyController extends BaseController {
 
     $service = $this->get_service();
     $applies = $service->get_list($me, $keyword, $start, $pagesize);
-    $total = $service->get_total_number($me, $keyword);
     $keys = array('status', 'job_num', 'rmb');
     $labels = array(
       'status' => '上下线',
       'job_num' => '每日限量',
       'rmb' => '今日余量',
     );
+    $today = mktime(0, 0, 0);
+    $expires = array();
 
     foreach ( $applies as $index => $apply ) {
       foreach ( $keys as $key ) {
@@ -46,6 +47,12 @@ class ApplyController extends BaseController {
             $apply['before'] = $service->get_ad_attr($apply['adid'], $key);
           }
           if ($key == 'rmb') {
+            // 如果是今日之前的申请，自动作废
+            if (strtotime($apply['create_time']) < $today) {
+              $expires[] = $apply['id'];
+              unset($applies[$index]);
+              break;
+            }
             $step_rmb = $service->get_ad_attr($apply['adid'], 'step_rmb');
             $apply['after'] = $apply['after'] / $step_rmb;
             $apply['before'] = $apply['before'] / $step_rmb;
@@ -56,7 +63,13 @@ class ApplyController extends BaseController {
       }
     }
 
+    // 作废申请
+    $service->update(array(
+      'status' => \diy\service\Apply::EXPIRED
+    ), $expires);
 
+
+    $total = $service->get_total_number($me, $keyword);
     $this->output(array(
       'code' => 0,
       'msg' => 'fetched',
