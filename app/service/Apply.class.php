@@ -33,7 +33,7 @@ class Apply extends Base {
   public function get_list($userid, $keyword = '', $start = 0, $pagesize = 10) {
     $DB = $this->get_read_pdo();
     $keyword_sql = $keyword ? " AND (`ad_name` LIKE :keyword OR `channel` LIKE :keyword)" : '';
-    $sql = "SELECT a.`id`, `adid`, `set_status`, `set_job_num`, `set_rmb`, a.`create_time`, `handle_time`, a.`status`,
+    $sql = "SELECT a.`id`, `adid`, `set_status`, `set_job_num`, `set_rmb`, a.`create_time`, `handler`, `handle_time`, a.`status`,
               `ad_name`, `channel`, `cid`
             FROM `" . self::$TABLE . "` a LEFT JOIN `t_adinfo` i ON a.`adid`=i.`id`
               LEFT JOIN `t_ad_source` c ON a.`adid`=c.`id`

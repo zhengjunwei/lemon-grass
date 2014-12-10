@@ -36,6 +36,7 @@ class ApplyController extends BaseController {
     );
     $today = mktime(0, 0, 0);
     $expires = array();
+    $handler = array();
 
     foreach ( $applies as $index => $apply ) {
       foreach ( $keys as $key ) {
@@ -61,6 +62,7 @@ class ApplyController extends BaseController {
           break;
         }
       }
+      $handler[] = $apply['handler'];
     }
 
     // 作废申请
@@ -68,6 +70,15 @@ class ApplyController extends BaseController {
       'status' => \diy\service\Apply::EXPIRED
     ), $expires);
 
+    // 取用户姓名
+    $handlers = implode(',', array_filter(array_unique($handler)));
+    if ($handlers) {
+      require dirname(__FILE__) . '/../../dev_inc/admin.class.php';
+      $users = admin::get_user_info_by_id($this->get_pdo_read(), $handlers);
+      foreach ( $applies as $index => $apply ) {
+        $applies[$index]['handler'] = $users[$apply['handler']];
+      }
+    }
 
     $total = $service->get_total_number($me, $keyword);
     $this->output(array(
