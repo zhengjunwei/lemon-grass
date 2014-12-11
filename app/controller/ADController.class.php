@@ -275,6 +275,25 @@ class ADController extends BaseController {
     if (!$check) {
       $this->exit_with_error(25, '插入消费记录失败', 400, SQLHelper::$info);
     }
+    // 创建默认的深度任务
+    require dirname(__FILE__) . '/../../dev_inc/admin_task.class.php';
+    require dirname(__FILE__) . '/../../dev_inc/ADOperationLogger.class.php';
+    $tasks = admin_task::get_task_default($DB);
+    foreach ($tasks as $task) {
+      $task_id = $CM->id1();
+      $task_step_rmb = $task['step_rmb'];
+      $type = $task['type'];
+      $delta = $task['delta'];
+      $name = $task['name'];
+      $desc = $task['desc'];
+      $param = $task['param'];
+      $probability = $task['probability'];
+      if ($task_id = admin_task::add_task($DB, $task_id, $id, $task_step_rmb, $type, $delta, $name, $desc, $now, $param, $probability)) {
+        // log it
+        $log = new ADOperationLogger($DB);
+        $log->log($id, 'task', 'add', "$task_step_rmb, $type, $delta, $name, $desc, $param, $probability => $task_id");
+      }
+    }
     // 记录平台专属数据
     if ($attr['ad_app_type'] == 2) {
       $check = SQLHelper::insert($DB, self::$T_IOS_INFO, $callback);
