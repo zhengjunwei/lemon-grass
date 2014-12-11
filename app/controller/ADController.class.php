@@ -11,6 +11,7 @@ class ADController extends BaseController {
   static $T_IOS_INFO = 't_adinfo_ios';
   static $T_SOURCE = 't_ad_source';
   static $T_INFO = 't_adinfo';
+  static $T_RMB = 't_adinfo_rmb';
   public static $T_APPLY = 't_diy_apply';
   static $FIELDS_CALLBACK = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type', 'open_url_type');
   static $FIELDS_CHANNEL = array('channel', 'owner', 'cid', 'url', 'user', 'pwd', 'feedback', 'cycle');
@@ -262,6 +263,17 @@ class ADController extends BaseController {
     $check = SQLHelper::insert($DB, self::$T_INFO, $attr);
     if (!$check) {
       $this->exit_with_error(20, '插入广告失败', 400, SQLHelper::$info);
+    }
+    // 插入消费记录
+    $rmb = array(
+      'id' => $id,
+      'rmb' => 0,
+      'rmb_in' => 0,
+      'rmb_out' => 0,
+    );
+    $check = SQLHelper::insert($DB, self::$T_RMB, $rmb);
+    if (!$check) {
+      $this->exit_with_error(25, '插入消费记录失败', 400, SQLHelper::$info);
     }
     // 记录平台专属数据
     if ($attr['ad_app_type'] == 2) {
