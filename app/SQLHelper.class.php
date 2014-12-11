@@ -8,6 +8,7 @@
 
 class SQLHelper {
   static $info = '';
+  public static $lastInsertId;
 
   public static function create_insert_sql($table, $array, $use_prepare = true) {
     $keys = array_keys($array);
@@ -87,6 +88,7 @@ class SQLHelper {
     $state = $DB->prepare($sql);
     $result = $state->execute($params);
     self::$info = $state->errorInfo();
+    self::$lastInsertId = $DB->lastInsertId();
     return $result;
   }
 

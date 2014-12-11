@@ -13,8 +13,8 @@ class ADController extends BaseController {
   static $T_INFO = 't_adinfo';
   public static $T_APPLY = 't_diy_apply';
   static $FIELDS_CALLBACK = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type', 'open_url_type');
-  static $FIELDS_CHANNEL = array('channel', 'cid', 'url', 'user', 'pwd', 'feedback', 'cycle');
-  static $FIELDS_APPLY = array('status', 'today_left', 'job_num');
+  static $FIELDS_CHANNEL = array('channel', 'owner', 'cid', 'url', 'user', 'pwd', 'feedback', 'cycle');
+  static $FIELDS_APPLY = array('status', 'today_left', 'job_num', 'message');
 
   private function get_ad_info() {
     require_once dirname(__FILE__) . "/../../dev_inc/admin_ad_info.class.php";
@@ -123,11 +123,14 @@ class ADController extends BaseController {
    * @param $id
    */
   public function init($id) {
+    require dirname(__FILE__) . '/../../dev_inc/admin.class.php';
     $DB = $this->get_pdo_read();
     $CM = $this->get_cm();
     $ad_info = $this->get_ad_info();
 
     $labels = $ad_info->select_ad_labels($DB);
+    $sales = admin::get_all_sales($DB);
+    $me = $_SESSION['id'];
     $init = array(
       'ad_app_type' => 1,
       'ad_type' => 0,
@@ -147,12 +150,14 @@ class ADController extends BaseController {
       'province_type' => 0,
       'share_text'=>'',
       'down_type' => 0,
+      'owner' => $me,
     );
     $options = array(
       'cates' => array(),
       'net_types' => $CM->all_net_types,
       'ad_types' => $labels,
       'provinces' => array(),
+      'sales' => array(),
     );
     foreach ($CM->ad_cate as $key => $value) {
       $options['cates'][] = array(
@@ -166,6 +171,13 @@ class ADController extends BaseController {
         'value' => $value,
       );
     }
+    foreach ( $sales as $key => $value ) {
+      $options['sales'][] = array(
+        'key' => $key,
+        'value' => $value,
+      );
+    }
+
 
     if ($id === 'init') {
       $this->output(array(
@@ -197,9 +209,7 @@ class ADController extends BaseController {
       'ad_url_full' => (substr($res['ad_url'], 0, 7) == 'upload/' ? 'http://www.dianjoy.com/dev/' : '') . $res['ad_url'],
       'shoots' => array_filter(preg_split('/,{2,}/', $ad_shoot)),
     ));
-    $result = array_merge($init, $res, array(
-
-    ));
+    $result = array_merge($init, $res);
 
     $this->output(array(
       'code' => 0,
@@ -237,7 +247,7 @@ class ADController extends BaseController {
     $attr = array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, 'total_num');
     $attr['id'] = $callback['ad_id'] = $channel['id'] = $id;
     $attr['status'] = 2; // 新建，待审核
-    $attr['create_user'] = $channel['owner'] = $me;
+    $attr['create_user'] = $channel['execute_owner'] = $me;
     $attr['create_time'] = $now;
 
     //广告投放地理位置信息
@@ -298,8 +308,11 @@ class ADController extends BaseController {
    * 其它修改会直接入库
    * @author Meathill
    * @since 0.1.0
+   *
    * @param $id
    * @param array [optional] $attr
+   *
+   * @return null
    */
   public function update($id, $attr = null) {
     $DB = $this->get_pdo_write();
@@ -324,7 +337,6 @@ class ADController extends BaseController {
     $check = SQLHelper::update($DB, self::$T_INFO, $attr, $id);
     if (!$check) {
       $this->exit_with_error(30, '修改广告失败', 400);
-      var_dump(SQLHelper::$info);
     }
     //广告投放地理位置信息
     if (count($attr['provinces'])) {
@@ -360,10 +372,12 @@ class ADController extends BaseController {
       'msg' => '修改完成',
       'data' => $attr,
     ));
+    return null;
   }
 
   /**
    * 删除广告
+   *
    * @param $id
    */
   public function delete($id) {
@@ -386,7 +400,7 @@ class ADController extends BaseController {
     $attr = array(
       'status' => -1,
     );
-    return $this->update($id, $attr);
+    $this->update($id, $attr);
   }
 
   /**
@@ -401,7 +415,9 @@ class ADController extends BaseController {
       'userid' => $_SESSION['id'],
       'adid' => $id,
       'create_time' => $now,
+      'send_msg' => $changed['message'],
     );
+    unset($changed['message']);
 
     // 对同一属性的修改不能同时有多个
     $service = new \diy\service\Apply();
@@ -420,8 +436,9 @@ class ADController extends BaseController {
     }
     $check = SQLHelper::insert($DB, self::$T_APPLY, $attr);
     if (!$check) {
-      $this->exit_with_error(40, '创建申请失败', 403);
+      $this->exit_with_error(40, '创建申请失败', 403, SQLHelper::$info);
     }
+    $attr['id'] = SQLHelper::$lastInsertId;
 
     // 给运营发通知
     $notice = new Notification();
@@ -431,12 +448,14 @@ class ADController extends BaseController {
       'create_time' => $now,
     ));
 
+    header('HTTP/1.1 201 Created');
     $this->output(array(
       'code' => 0,
       'msg' => 'apply received',
       'notice' => $notice_status ? '通知已发' : '通知失败',
       'data' => $attr,
     ));
+    return;
   }
 
 

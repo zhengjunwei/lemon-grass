@@ -76,7 +76,7 @@ class ApplyController extends BaseController {
       require dirname(__FILE__) . '/../../dev_inc/admin.class.php';
       $users = admin::get_user_info_by_id($this->get_pdo_read(), $handlers);
       foreach ( $applies as $index => $apply ) {
-        $applies[$index]['handler'] = $users[$apply['handler']];
+        $applies[$index]['handler'] = isset($users[$apply['handler']]) ? $users[$apply['handler']] : $apply['handler'];
       }
     }
 
