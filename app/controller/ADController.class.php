@@ -519,6 +519,14 @@ class ADController extends BaseController {
       }
     }
 
+    // 去掉上传中的绝对路径
+    $uploads = array('ad_url', 'ad_shoot', 'pic_path');
+    foreach ( $uploads as $key ) {
+      if ($attr[$key]) {
+        $attr[$key] = str_replace(UPLOAD_URL, '', $attr['ad_url']);
+      }
+    }
+
     // 对数据进行预处理
     if ($attr['net_type']) {
       if (in_array(0, $attr['net_type'])) {

@@ -136,17 +136,20 @@ class BaseController {
     // 记录到log里
     require_once(dirname(__FILE__) . '/../../dev_inc/upload.class.php');
     upload::insert($DB, $id, $type, $new_path, $upload_user, $file['name']);
+
+    // 生成反馈
+    $url = UPLOAD_BASE === '' ? UPLOAD_URL . $new_path : str_replace(UPLOAD_BASE, UPLOAD_URL, $new_path);
     $result = array(
       'code' => 0,
       'msg' => 'uploaded',
       'id' => $id,
-      'url' => str_replace(UPLOAD_BASE, UPLOAD_URL, $new_path),
+      'url' => $url,
     );
 
-    require dirname(__FILE__) . '/../../app/utils/functions.php';
     if ($ext == '.apk') { // 仅解释apk文件，其他直接返回空
       try {
         require_once(dirname(__FILE__) . '/../../dev_inc/apk_parser.class.php');
+        require dirname(__FILE__) . '/../../app/utils/functions.php';
         $p = new ApkParser();
         $p->open($new_path);
         $permission = $p->getPermission();
