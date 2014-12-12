@@ -475,6 +475,8 @@ class ADController extends BaseController {
     $notice = new Notification();
     $notice_status = $notice->send(array(
       'ad_id' => $id,
+      'uid' => $attr['id'],
+      'user_id' => $_SESSION['id'],
       'alarm_type' => Notification::$EDIT_AD,
       'create_time' => $now,
     ));
