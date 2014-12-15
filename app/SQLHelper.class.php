@@ -52,7 +52,7 @@ class SQLHelper {
       }
       if (is_array($id)) {
         $id_sql = implode("','", $id);
-        $id_sql = "IN ('$id_sql')";
+        $id_sql = " IN ('$id_sql')";
       } else {
         $id_sql = "='$id'";
       }
@@ -60,7 +60,7 @@ class SQLHelper {
     $fields = implode(', ', $fields);
     $sql = "UPDATE `$table`
             SET $fields
-            WHERE `id`$id_sql";
+            WHERE `id` $id_sql";
     return $sql;
   }
 
@@ -74,6 +74,7 @@ class SQLHelper {
         $count = 0;
         foreach ( $id as $value ) {
           $params[":id$count"] = $value;
+          $count++;
         }
       } else {
         $params[':id'] = $id;

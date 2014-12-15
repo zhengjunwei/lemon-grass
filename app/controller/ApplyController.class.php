@@ -85,7 +85,7 @@ class ApplyController extends BaseController {
       'code' => 0,
       'msg' => 'fetched',
       'total' => $total,
-      'list' => $applies,
+      'list' => array_values($applies),
     ));
   }
 
