@@ -32,7 +32,7 @@ class ADController extends BaseController {
     $ad_info =  $this->get_ad_info();
     $me = $_SESSION['id'];
 
-    $keyword = isset($_REQUEST['$keyword']) ? $_REQUEST['$keyword'] : FALSE;
+    $keyword = isset($_REQUEST['keyword']) ? $_REQUEST['keyword'] : FALSE;
     $pagesize = isset($_REQUEST['pagesize']) ? (int)$_REQUEST['pagesize'] : 10;
     $page = isset($_REQUEST['page']) ? (int)$_REQUEST['page'] : 0;
     $page_start = $page * $pagesize;
