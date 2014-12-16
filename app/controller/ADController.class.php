@@ -546,7 +546,7 @@ class ADController extends BaseController {
     $uploads = array('ad_url', 'ad_shoot', 'pic_path');
     foreach ( $uploads as $key ) {
       if ($attr[$key]) {
-        $attr[$key] = str_replace(UPLOAD_URL, '', $attr['ad_url']);
+        $attr[$key] = str_replace(UPLOAD_URL, '', $attr[$key]);
       }
     }
 
