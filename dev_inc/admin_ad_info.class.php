@@ -33,9 +33,10 @@ class admin_ad_info extends ad_info {
       $end = " AND `create_time`<='$end'";
     }
     $sql = "SELECT a.`id`, `ad_name`, `create_time`, `status_time`, `quote_rmb`,
-              `step_rmb`, `status`, `owner`, `channel`, `cid`
+              `step_rmb`, `status`, `owner`, `execute_owner`, `channel`, `cid`
             FROM `t_adinfo` a LEFT JOIN `t_ad_source` b ON a.id=b.id
-            WHERE owner='$salesman' AND status>=0 $start $end $keyword
+            WHERE (`owner`='$salesman' OR `execute_owner`='$salesman')
+              AND status>=0 $start $end $keyword
             ORDER BY `$order` DESC
             LIMIT $page_start, $pagesize";
     return $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC|PDO::FETCH_UNIQUE);
@@ -65,7 +66,8 @@ class admin_ad_info extends ad_info {
     }
     $sql = "SELECT COUNT('X')
             FROM `t_adinfo` a LEFT JOIN `t_ad_source` s ON a.`id`=s.`id`
-            WHERE `owner`=$salesman AND `status`>=0 $start $end $keyword";
+            WHERE (`owner`='$salesman' OR `execute_owner`='$salesman')
+              AND `status`>=0 $start $end $keyword";
     return (int)$DB->query($sql)->fetchColumn();
   }
 

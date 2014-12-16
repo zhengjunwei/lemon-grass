@@ -40,9 +40,17 @@ class ADController extends BaseController {
     $res = $ad_info->get_ad_info_by_owner($DB, $me, '', '', $keyword, $page_start, $pagesize);
     $total = $ad_info->get_ad_number_by_owner($DB, $me, '', '', $keyword);
     $adids = array_keys(array_filter($res));
+    $users = array();
+    foreach ( $res as $value ) {
+      $users[] = $value['execute_owner'];
+    }
 
     // 取总投放量
     $rmb_out = $ad_info->get_rmb_out_by_ad($DB, $adids);
+
+    // 取商务名单
+    require dirname(__FILE__) . '/../../dev_inc/admin.class.php';
+    $users = admin::get_user_info_by_id($DB, implode(',', array_filter(array_unique($users))));
 
     // 取当前申请
     $apply = new \diy\service\Apply();
@@ -98,9 +106,9 @@ class ADController extends BaseController {
         'id' => $id,
         'channel_id' => $cid,
         'aid' => $aid,
+        'execute_owner' => $users[$value['execute_owner']],
         'packname' => str_replace('.', '-', $value['pack_name']),
         'class' => $value['ad_app_type'] == 1 ? 'Android' : 'iPhone',
-        'others' => $value['others'] != '' ? $value['others'] : '编辑注释',
         'today_left' => $value['step_rmb'] != 0 ? (int)($value['rmb'] / $value['step_rmb']) : 0,
         'job_num' => (int)$ad_jobs[$id]['jobnum'],
         'job_time' => date("H:i", strtotime($ad_jobs[$id]['jobtime'])),

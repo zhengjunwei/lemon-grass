@@ -63,6 +63,8 @@ Macaw::get(BASE . 'dashboard/', function () {
   exit(json_encode($result));
 });
 
+Macaw::options(BASE . 'file/', 'BaseController@on_options');
+
 Macaw::post(BASE . 'file/', 'BaseController@upload');
 
 Macaw::error(function() {
