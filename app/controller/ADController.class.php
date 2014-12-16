@@ -476,7 +476,6 @@ class ADController extends BaseController {
     foreach ( $changed as $key => $value) {
       if ($key == 'today_left') { // 今日余量需转换成rmb
         $key = 'rmb';
-        $DB = $this->get_pdo_read();
         $step_rmb = SQLHelper::get_attr($DB, self::$T_INFO, $id, 'step_rmb');
         $value = (int)$value * (int)$step_rmb;
       }
