@@ -260,13 +260,19 @@ class ADController extends BaseController {
     $attr['create_time'] = $now;
 
     //广告投放地理位置信息
-    if (count($attr['provinces'])) {
-      $check = admin_location::insert_ad_province($DB, $id, $attr['provinces']);
-      if (!$check) {
-        $this->exit_with_error(21, '插入投放地理位置失败', 400);
+    if ($attr['province_type'] == 1 && isset($attr['provinces'])) {
+      if (!is_array($attr['provinces'])) {
+        $attr['provinces'] = array((int)$attr['provinces']);
+      }
+      if (count($attr['provinces'])) {
+        $check = admin_location::insert_ad_province($DB, $id, $attr['provinces']);
+        if (!$check) {
+          $this->exit_with_error(21, '插入投放地理位置失败', 400);
+        }
       }
     }
     unset($attr['provinces']);
+
     // 插入广告信息
     $check = SQLHelper::insert($DB, self::$T_INFO, $attr);
     if (!$check) {
@@ -377,14 +383,21 @@ class ADController extends BaseController {
     if (!$check) {
       $this->exit_with_error(30, '修改广告失败', 400);
     }
+
     //广告投放地理位置信息
-    if (count($attr['provinces'])) {
-      admin_location::del_by_ad($DB, $id);
-      $check = admin_location::insert_ad_province($DB, $id, $attr['provinces']);
-      if (!$check) {
-        $this->exit_with_error(31, '修改投放地理位置失败', 400);
+    admin_location::del_by_ad($DB, $id);
+    if ($attr['province_type'] == 1 && isset($attr['provinces'])) {
+      if (!is_array($attr['provinces'])) {
+        $attr['provinces'] = array($attr['provinces']);
+      }
+      if (count($attr['provinces'])) {
+        $check = admin_location::insert_ad_province($DB, $id, $attr['provinces']);
+        if (!$check) {
+          $this->exit_with_error(31, '修改投放地理位置失败', 400);
+        }
       }
     }
+
     // 记录平台专属数据
     if ($attr['ad_app_type'] == 2) {
       $check = SQLHelper::update($DB, self::$T_IOS_INFO, $callback, $id);
@@ -538,13 +551,16 @@ class ADController extends BaseController {
     }
 
     // 对数据进行预处理
-    if ($attr['net_type']) {
-      if (in_array(0, $attr['net_type'])) {
-        $attr['net_type'] = 0;
-      } else {
-        $attr['net_type'] = implode(',', $attr['net_type']);
+    if (isset($attr['net_type'])) {
+      if (is_array($attr['net_type'])) {
+        if (in_array(0, $attr['net_type'])) {
+          $attr['net_type'] = 0;
+        } else {
+          $attr['net_type'] = implode(',', $attr['net_type']);
+        }
       }
     }
+
     if ($attr['seq_rmb'] || $attr['step_rmb']) {
       $attr['seq_rmb'] = $attr['seq_rmb'] == '' ? (int)$attr['step_rmb'] : (int)$attr['seq_rmb'];
     }
