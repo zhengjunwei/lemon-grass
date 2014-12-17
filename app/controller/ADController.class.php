@@ -559,7 +559,6 @@ class ADController extends BaseController {
         }
       }
     }
-
     if ($attr['seq_rmb'] || $attr['step_rmb']) {
       $attr['seq_rmb'] = $attr['seq_rmb'] == '' ? (int)$attr['step_rmb'] : (int)$attr['seq_rmb'];
     }
@@ -568,6 +567,11 @@ class ADController extends BaseController {
     }
     if ($attr['feedback']) {
       $attr['open_url_type'] = $attr['feedback'] == 4 ? 0 : 1;
+    }
+    // TODO 将来考虑建一个专门的通知表，存储不需要运营操作，但他们应该知悉的内容
+    if (isset($attr['message'])) {
+      $attr['others'] = $attr['message'];
+      unset($attr['message']);
     }
 
     return $attr;
