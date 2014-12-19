@@ -127,6 +127,18 @@ class admin_ad_info extends ad_info {
     return $state->fetch(PDO::FETCH_ASSOC);
   }
 
+  public function get_ad_info_by_pack_name(PDO $DB, $pack_name) {
+    $sql = "SELECT `ad_name`, `ad_text`, `ad_app_type`, `pic_path`, `ad_desc`,
+              `cpc_cpa`, `ad_shoot`, `cate`, `ad_type`
+            FROM `t_adinfo`
+            WHERE `pack_name`=:pack_name
+            ORDER BY `create_time` DESC
+            LIMIT 1";
+    $state = $DB->prepare($sql);
+    $state->execute(array(':pack_name' => $pack_name));
+    return $state->fetch(PDO::FETCH_ASSOC);
+  }
+
   public function select_upload_log(PDO $DB, $id) {
     $sql = "SELECT *
             FROM `t_upload_log`

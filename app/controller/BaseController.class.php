@@ -156,15 +156,23 @@ class BaseController {
         foreach ($permission as $key => $value) {
           $permission[$key] = str_replace('.', '-', $value);
         }
+        $package = array(
+          'pack_name' => $p->getPackage(),
+          'ad_lib' => $p->getVersionName(),
+          'ad_size' => format_file_size(filesize($new_path)),
+        );
+
+        if ($type == 'ad_url') {
+          // 从数据库读相同包名的广告有哪些可以直接用的数据
+          require dirname(__FILE__) . '/../../dev_inc/admin_ad_info.class.php';
+          $ad_info = new admin_ad_info();
+          $info = $ad_info->get_ad_info_by_pack_name($DB, $package['pack_name']);
+        }
 
         $result = array_merge($result, array(
           'md5' => md5_file($new_path),
           'permission' => $permission,
-          'form' => array(
-            'pack_name' => $p->getPackage(),
-            'ad_lib' => $p->getVersionName(),
-            'ad_size' => format_file_size(filesize($new_path)),
-          ),
+          'form' => array_merge($package, (array)$info),
         ));
       } catch (Exception $e) {
         $package = $e->getMessage();
