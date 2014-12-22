@@ -167,6 +167,8 @@ class BaseController {
           require dirname(__FILE__) . '/../../dev_inc/admin_ad_info.class.php';
           $ad_info = new admin_ad_info();
           $info = $ad_info->get_ad_info_by_pack_name($DB, $package['pack_name']);
+          $info['ad_shoot'] = $info['ad_shoot'] ? UPLOAD_URL . $info['ad_shoot'] : '';
+          $info['pic_path'] = $info['pic_path'] ? UPLOAD_URL . $info['pic_path'] : '';
         }
 
         $result = array_merge($result, array(
