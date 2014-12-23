@@ -63,7 +63,7 @@ class Apply extends Base {
     $sql = "SELECT COUNT('x')
             FROM " . self::$TABLE . " a LEFT JOIN `t_adinfo` i ON a.`adid`=i.`id`
               LEFT JOIN `t_ad_source` c ON a.`adid`=c.`id`
-            WHERE `userid`='$userid' AND a.`status`!=" . self::WITHDRAWN . " $keyword_sql";
+            WHERE `userid`='$userid' AND a.`status`<" . self::WITHDRAWN . " $keyword_sql";
     if ($keyword) {
       $state = $DB->prepare($sql);
       $state->execute(array(':keyword' => $keyword));

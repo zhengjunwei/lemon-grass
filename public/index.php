@@ -19,4 +19,5 @@ require '../router/routes.php';
 require '../router/user.php';
 require '../router/ad.php';
 require '../router/stat.php';
+require '../router/notice.php';
 Macaw::dispatch();
