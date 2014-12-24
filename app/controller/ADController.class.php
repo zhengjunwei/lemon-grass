@@ -378,14 +378,25 @@ class ADController extends BaseController {
     $channel = array_pick($attr, self::$FIELDS_CHANNEL);
     $attr = array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, 'total_num');
 
-    // 插入广告信息
+    // 更新广告信息
     $check = SQLHelper::update($DB, self::$T_INFO, $attr, $id);
     if (!$check) {
       $this->exit_with_error(30, '修改广告失败', 400);
     }
 
+    if ($attr['others']) { // 发送一枚通知
+      $notice = new Notification();
+      $notice_status = $notice->send(array(
+        'ad_id' => $id,
+        'alarm_type' => Notification::$EDIT_AD_COMMENT,
+        'create_time' => date('Y-m-d H:i:s'),
+      ));
+    }
+
     //广告投放地理位置信息
-    admin_location::del_by_ad($DB, $id);
+    if (isset($attr['province_type'])) {
+      admin_location::del_by_ad($DB, $id);
+    }
     if ($attr['province_type'] == 1 && isset($attr['provinces'])) {
       if (!is_array($attr['provinces'])) {
         $attr['provinces'] = array($attr['provinces']);
@@ -422,6 +433,7 @@ class ADController extends BaseController {
     $this->output(array(
       'code' => 0,
       'msg' => '修改完成',
+      'notice' => $notice_status ? 'ok' : 'fail',
       'data' => $attr,
     ));
     return null;

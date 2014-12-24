@@ -7,8 +7,11 @@
  */
 
 class Notification extends \diy\service\Base {
+  const LOG = 't_admin_alarm_log';
+
   static $NEW_AD = 20;
   static $EDIT_AD = 21;
+  static $EDIT_AD_COMMENT = 26;
 
   static $NORMAL = 0;
   static $HANDLED = 1;
