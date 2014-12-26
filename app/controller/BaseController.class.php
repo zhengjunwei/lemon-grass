@@ -53,6 +53,9 @@ class BaseController {
     $DB = require(dirname(__FILE__) . "/../../inc/pdo.php");
 
     $file = $_FILES['file'];
+    if (!$file) {
+      $this->exit_with_error(1, '无法获取文件，请检查服务器设置。', 400);
+    }
     $id = isset($_REQUEST['id']) && $_REQUEST['id'] != '' && $_REQUEST['id'] != 'undefined' ? $_REQUEST['id'] : $CM->id1();
     $type = isset($_REQUEST['name']) ? $_REQUEST['name'] : 'ad_url';
     $upload_user = $_SESSION['id'];

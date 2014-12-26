@@ -129,7 +129,7 @@ class admin_ad_info extends ad_info {
   }
 
   public function get_ad_info_by_pack_name(PDO $DB, $pack_name) {
-    $sql = "SELECT `ad_name`, `ad_text`, `ad_app_type`, `pic_path`, `ad_desc`,
+    $sql = "SELECT `ad_name`, `ad_app_type`, `pic_path`, `ad_desc`,
               `cpc_cpa`, `ad_shoot`, `cate`, `ad_type`
             FROM `t_adinfo`
             WHERE `pack_name`=:pack_name
