@@ -43,8 +43,8 @@ class Notification extends \diy\service\Base {
               `create_time`, `op_time`, `description`, `handler`
             FROM `t_admin_alarm_log` a LEFT JOIN `t_alarm_type` t ON a.alarm_type=t.id
             WHERE (`admin_id`='$admin_id' $type_sql)
-              AND `create_time`>'$date' AND `status`=0 AND a.`id`>$latest";
-    header('sql: ' . $sql);
+              AND `create_time`>'$date' AND `status`=0 AND a.`id`>$latest
+            ORDER BY `id` DESC";
     $alarms = $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     foreach ($alarms as &$alarm) {
       $alarm['id'] = (int)$alarm['id'];

@@ -15,7 +15,7 @@ class ADController extends BaseController {
   public static $T_APPLY = 't_diy_apply';
   static $FIELDS_CALLBACK = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type', 'open_url_type');
   static $FIELDS_CHANNEL = array('channel', 'owner', 'cid', 'url', 'user', 'pwd', 'feedback', 'cycle');
-  static $FIELDS_APPLY = array('status', 'today_left', 'job_num', 'message');
+  static $FIELDS_APPLY = array('status', 'today_left', 'job_num');
 
   private function get_ad_info() {
     require_once dirname(__FILE__) . "/../../dev_inc/admin_ad_info.class.php";
@@ -62,7 +62,13 @@ class ADController extends BaseController {
         $applies_by_ad[$adid] = array();
       }
       unset($apply['adid']);
-      $apply = array_filter($apply);
+      $apply = array_filter($apply, function ($value) {
+        return isset($value);
+      });
+      // 同时有每日限量和今日余量说明是要修改每日限量
+      if (array_key_exists('set_job_num', $apply) && array_key_exists('set_rmb', $apply)) {
+        unset($apply['set_rmb']);
+      }
       $key = array_keys($apply)[0]; // 因为过滤掉了没有内容的键，又删掉了adid，只剩下要操作的key了
       $apply[$key . '_id'] = $id;
       $applies_by_ad[$adid][] = array_filter($apply);
@@ -95,7 +101,7 @@ class ADController extends BaseController {
           if (array_key_exists('set_rmb', $item)) {
             $item = array(
               'set_today_left_id' => $item['set_rmb_id'],
-              'set_today_left' => $value['step_rmb'] != 0 ? $item['set_rmb'] / $value['step_rmb'] : 0,
+              'set_today_left' => $item['set_rmb'],
             );
           }
           $apply = array_merge($apply, $item);
@@ -201,6 +207,15 @@ class ADController extends BaseController {
     // 广告内容
     $res = $ad_info->get_ad_info_by_id($DB, $id);
     $ad_shoot = preg_replace('/^,|,$/', '', $res['ad_shoot']);
+    $ad_shoots = preg_split('/,+/', $ad_shoot);
+    if (is_array($ad_shoots)) {
+      foreach ( $ad_shoots as $key => $ad_shoot ) {
+        $ad_shoots[$key] = $this->createCompletePath($ad_shoot);
+      }
+      $res['shoots'] = $ad_shoots;
+    }
+    $res['ad_url'] = $this->createCompletePath($res['ad_url']);
+    $res['pic_path'] = $this->createCompletePath($res['pic_path']);
 
     // 上传文件记录
     $upload_log = $ad_info->select_upload_log($DB, $id);
@@ -215,8 +230,6 @@ class ADController extends BaseController {
 
     $options = array_merge($options, array(
       'apk_history' => $upload_log,
-      'ad_url_full' => (substr($res['ad_url'], 0, 7) == 'upload/' ? 'http://www.dianjoy.com/dev/' : '') . $res['ad_url'],
-      'shoots' => array_filter(preg_split('/,{2,}/', $ad_shoot)),
     ));
     $result = array_merge($init, $res);
 
@@ -366,10 +379,10 @@ class ADController extends BaseController {
 
     $attr = $attr ? $attr : $this->get_post_data();
 
-    // 发申请
+    // 需要发申请的修改
     if (array_key_exists('status', $attr) || array_key_exists('job_num', $attr)
       || array_key_exists('today_left', $attr)) {
-      return $this::send_apply($DB, $id, array_pick($attr, self::$FIELDS_APPLY));
+      return $this::send_apply($DB, $id, $attr);
     }
 
     $attr = $this->validate($attr, $id);
@@ -384,6 +397,7 @@ class ADController extends BaseController {
       $this->exit_with_error(30, '修改广告失败', 400);
     }
 
+    $notice_status = false;
     if ($attr['others']) { // 发送一枚通知
       $notice = new Notification();
       $notice_status = $notice->send(array(
@@ -434,7 +448,7 @@ class ADController extends BaseController {
       'code' => 0,
       'msg' => '修改完成',
       'notice' => $notice_status ? 'ok' : 'fail',
-      'data' => $attr,
+      'ad' => $attr,
     ));
     return null;
   }
@@ -472,6 +486,8 @@ class ADController extends BaseController {
    * @param PDO $DB
    * @param $id
    * @param array $changed
+   *
+   * @return null
    */
   private function send_apply(PDO $DB, $id, array $changed ) {
     $now = date('Y-m-d H:i:s');
@@ -479,24 +495,36 @@ class ADController extends BaseController {
       'userid' => $_SESSION['id'],
       'adid' => $id,
       'create_time' => $now,
-      'send_msg' => $changed['message'],
+      'send_msg' => trim($changed['message']),
     );
     unset($changed['message']);
 
+    // 取欲修改的属性和值
+    $key = '';
+    $value = 0;
+    if (isset($changed['today_left'])) { // 今日余量需转换成rmb
+      $key = 'set_rmb';
+      $value = (int)$changed['today_left'];
+    }
+    if (isset($changed['job_num'])) { // 每日投放需要看是否同时修改今日余量
+      if (isset($changed['rmb'])) {
+        $attr['set_rmb'] = $changed['job_num'];
+      }
+      $key = 'set_job_num';
+      $value = $changed['job_num'];
+    }
+    if (isset($changed['status'])) {
+      $key = 'set_status';
+      $value = $changed['status'];
+    }
+
     // 对同一属性的修改不能同时有多个
     $service = new \diy\service\Apply();
-    foreach ( $changed as $key => $value) {
-      if ($key == 'today_left') { // 今日余量需转换成rmb
-        $key = 'rmb';
-        $step_rmb = SQLHelper::get_attr($DB, self::$T_INFO, $id, 'step_rmb');
-        $value = (int)$value * (int)$step_rmb;
-      }
-      $key = 'set_' . $key;
-      if ($service->is_available_same_attr($id, $key)) {
-        $this->exit_with_error(41, '该属性上次修改申请还未审批，不能再次修改', 400);
-      }
-      $attr[$key] = $value;
+    if ($service->is_available_same_attr($id, $key)) {
+      $this->exit_with_error(41, '该属性上次修改申请还未审批，不能再次修改', 400);
     }
+
+    $attr[$key] = $value;
     $check = SQLHelper::insert($DB, self::$T_APPLY, $attr);
     if (!$check) {
       $this->exit_with_error(40, '创建申请失败', 403, SQLHelper::$info);
@@ -508,7 +536,6 @@ class ADController extends BaseController {
     $notice_status = $notice->send(array(
       'ad_id' => $id,
       'uid' => $attr['id'],
-      'user_id' => $_SESSION['id'],
       'alarm_type' => Notification::$EDIT_AD,
       'create_time' => $now,
     ));
@@ -587,5 +614,15 @@ class ADController extends BaseController {
     }
 
     return $attr;
+  }
+
+  /**
+   * 返回完整路径
+   * @param string $url
+   *
+   * @return string
+   */
+  private function createCompletePath( $url ) {
+    return ( preg_match( '/^upload\//', $url ) ? UPLOAD_BASE : '' ) . $url;
   }
 } 
