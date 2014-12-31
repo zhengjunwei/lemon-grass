@@ -34,8 +34,9 @@ class admin_ad_info extends ad_info {
     }
     $sql = "SELECT a.`id`, `ad_name`, `create_time`, `status_time`, `quote_rmb`,
               `step_rmb`, `status`, `owner`, `execute_owner`, `channel`, `cid`,
-              `others`
-            FROM `t_adinfo` a LEFT JOIN `t_ad_source` b ON a.id=b.id
+              `others`, `rmb`
+            FROM `t_adinfo` a LEFT JOIN `t_ad_source` b ON a.`id`=b.`id`
+              LEFT JOIN `t_adinfo_rmb` r ON a.`id`=r.`id`
             WHERE (`owner`='$salesman' OR `execute_owner`='$salesman')
               AND status>=0 $start $end $keyword
             ORDER BY `$order` DESC
