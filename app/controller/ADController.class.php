@@ -349,6 +349,11 @@ class ADController extends BaseController {
       'create_time' => $now,
     ));
 
+    // 给运营发邮件
+    $mail = new \diy\service\Mailer();
+    $subject = '商务[' . $_SESSION['fullname'] . ']创建新广告：' . $attr['channel'] . ' ' . $attr['ad_name'];
+    $mail->send(OP_MAIL, $subject, $mail->create('ad-new', $attr));
+
     $this->output(array(
       'code' => 0,
       'msg' => '创建广告成功。相关通知' . ($notice_status ? '已发' : '失败'),
@@ -405,6 +410,11 @@ class ADController extends BaseController {
         'alarm_type' => Notification::$EDIT_AD_COMMENT,
         'create_time' => date('Y-m-d H:i:s'),
       ));
+
+      $mail = new \diy\service\Mailer();
+      $mail->send(OP_MAIL, '广告备注修改', $mail->create('ad-modified', array(
+        'id' => $id,
+      )));
     }
 
     //广告投放地理位置信息
@@ -539,6 +549,10 @@ class ADController extends BaseController {
       'alarm_type' => Notification::$EDIT_AD,
       'create_time' => $now,
     ));
+
+    // 给运营发邮件
+    $mail = new \diy\service\Mailer();
+    $mail->send(OP_MAIL, '广告属性修改', $mail->create('ad-apply', $attr));
 
     header('HTTP/1.1 201 Created');
     $this->output(array(

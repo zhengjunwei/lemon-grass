@@ -4,8 +4,9 @@
   "require": {
     "mustache/mustache": "~2.7",
     "illuminate/database": "*",
-    "codingbean/macaw": "dev-master",
-    "filp/whoops": "~1.0"
+    "noahbuscher/macaw": "dev-master",
+    "filp/whoops": "~1.0",
+    "phpmailer/phpmailer": "~5.2"
   },
   "license": "MIT",
   "version": "0.1.0",

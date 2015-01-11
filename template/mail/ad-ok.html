@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head lang="cn">
+  <meta charset="UTF-8">
+  <title>点乐自助平台-广告许可通知</title>
+</head>
+<body>
+<h1>你的广告通过已经上线了</h1>
+<p class="lead">你的广告已经通过上线了！</p>
+
+{{#has_modified}}
+<table>
+  <caption>运维调整了以下数据</caption>
+  <thead>
+  <tr>
+    <th>属性名称</th>
+    <th>目标值</th>
+    <th>调整后</th>
+  </tr>
+  </thead>
+  <tbody>
+  {{#modified}}
+  <tr>
+    <th>{{title}}</th>
+    <td>{{before}}</td>
+    <td>{{after}}</td>
+  </tr>
+  {{/modified}}
+  </tbody>
+</table>
+{{/has_modified}}
+</body>
+</html>
