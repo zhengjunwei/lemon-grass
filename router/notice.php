@@ -8,8 +8,8 @@
 
 use NoahBuscher\Macaw\Macaw;
 
-Macaw::get('notice/', 'NoticeController@get_list');
+Macaw::get(BASE . 'notice/', 'NoticeController@get_list');
 
-Macaw::options('notice/(:any)', 'BaseController@on_options');
+Macaw::options(BASE . 'notice/(:any)', 'BaseController@on_options');
 
-Macaw::delete('notice/(:any)', 'NoticeController@delete');
+Macaw::delete(BASE . 'notice/(:any)', 'NoticeController@delete');

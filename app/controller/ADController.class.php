@@ -513,28 +513,28 @@ class ADController extends BaseController {
     $key = '';
     $value = 0;
     if (isset($changed['today_left'])) { // 今日余量需转换成rmb
-      $key = 'set_rmb';
+      $key = 'rmb';
       $value = (int)$changed['today_left'];
     }
     if (isset($changed['job_num'])) { // 每日投放需要看是否同时修改今日余量
       if (isset($changed['rmb'])) {
         $attr['set_rmb'] = $changed['job_num'];
       }
-      $key = 'set_job_num';
+      $key = 'job_num';
       $value = $changed['job_num'];
     }
     if (isset($changed['status'])) {
-      $key = 'set_status';
+      $key = 'status';
       $value = $changed['status'];
     }
 
     // 对同一属性的修改不能同时有多个
     $service = new \diy\service\Apply();
-    if ($service->is_available_same_attr($id, $key)) {
+    if ($service->is_available_same_attr($id, 'set_' . $key)) {
       $this->exit_with_error(41, '该属性上次修改申请还未审批，不能再次修改', 400);
     }
 
-    $attr[$key] = $value;
+    $attr['set_' . $key] = $value;
     $check = SQLHelper::insert($DB, self::$T_APPLY, $attr);
     if (!$check) {
       $this->exit_with_error(40, '创建申请失败', 403, SQLHelper::$info);
@@ -551,8 +551,22 @@ class ADController extends BaseController {
     ));
 
     // 给运营发邮件
+    $info = $this->get_ad_info()->get_ad_info_by_id($DB, $id);
     $mail = new \diy\service\Mailer();
-    $mail->send(OP_MAIL, '广告属性修改', $mail->create('ad-apply', $attr));
+    $mail->send(OP_MAIL, '广告属性修改', $mail->create('apply-new', array_merge($info, array(
+      'key' => function ($key) {
+        $array = array(
+          'rmb' => '今日余量',
+          'job_num' => '每日限量',
+          'status' => '上/下线',
+        );
+        return $array[$key];
+      },
+      'is_status' => $key == 'status',
+      'value' => $value,
+      'comment' => $attr['send_msg'],
+      'owner' => $_SESSION['fullname'],
+    ))));
 
     header('HTTP/1.1 201 Created');
     $this->output(array(

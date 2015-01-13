@@ -6,7 +6,6 @@
  * Time: 下午6:33
  */
 include_once(dirname(__FILE__) . '/../inc/ad_info.class.php');
-require dirname(__FILE__) . '/../app/SQLHelper.class.php';
 
 class admin_ad_info extends ad_info {
   /**

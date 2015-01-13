@@ -3,6 +3,25 @@
 <head lang="cn">
   <meta charset="UTF-8">
   <title>点乐自助平台-新广告创建通知</title>
+  <style>
+    .go-to-btn {
+      background-color: #337ab7;
+      color: #FFF;
+      display: inline-block;
+      line-height: 2em;
+      font-size: 1.2em;
+      text-decoration: none;
+      width: 200px;
+      text-align: center;
+      border-radius: 4px;
+    }
+    .go-to-btn:hover {
+      background-color: #286090;
+    }
+    .mt20 {
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
 
@@ -30,12 +49,8 @@
     <th>备注</th>
     <td>{{others}}</td>
   </tr>
-  <tr>
-    <th></th>
-    <td>
-      <a href="http://www.dianjoy.com/dev/admin/#/ad/edit/{{id}}" target="_blank">立即处理</a>
-    </td>
-  </tr>
 </table>
+
+<a href="http://www.dianjoy.com/dev/admin/#/ad/edit/{{id}}" target="_blank" class="go-to-btn mt20">立即处理</a>
 </body>
 </html>

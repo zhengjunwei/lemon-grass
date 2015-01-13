@@ -1,29 +1,51 @@
 <!DOCTYPE html>
 <html>
-<head lang="en">
+<head lang="zh-cmn-Hans">
   <meta charset="UTF-8">
   <title>点乐自助平台-广告修改申请</title>
+  <style>
+    .go-to-btn {
+      background-color: #337ab7;
+      color: #FFF;
+      display: inline-block;
+      line-height: 2em;
+      font-size: 1.2em;
+      text-decoration: none;
+      width: 200px;
+      text-align: center;
+      border-radius: 4px;
+    }
+    .go-to-btn:hover {
+      background-color: #286090;
+    }
+    .mt20 {
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
 <h1>修改广告申请</h1>
-<p class="lead">{{owner}}想修改广告{{ad_name}}。请尽快处理。</p>
+<p class="lead">{{owner}}想修改广告{{channel}} {{ad_name}}。请尽快处理。</p>
 
-<table>
+<table border="1" cellpadding="5" cellspacing="1">
   <caption>变动如下</caption>
   <tr>
     <th>属性</th>
     <td>{{label}}</td>
   </tr>
   <tr>
-    <th>现在</th>
-    <td>{{value}}</td>
+    <th>修改为</th>
+    <td>
+      {{#is_status}}{{#value}}下线{{/value}}{{^value}}上线{{/value}}{{/is_status}}
+      {{^is_status}}{{value}}{{/is_status}}
+    </td>
   </tr>
   <tr>
-    <th>修改为</th>
-    <td>{{num}}</td>
+    <th>附言</th>
+    <td></td>
   </tr>
 </table>
 
-<a href="http://www.dianjoy.com/dev/admin/#/ad/apply/" target="_blank">立即处理</a>
+<a href="http://www.dianjoy.com/dev/admin/#/ad/apply/" target="_blank" class="go-to-btn mt20">立即处理</a>
 </body>
 </html>

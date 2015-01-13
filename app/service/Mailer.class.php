@@ -32,6 +32,7 @@ class Mailer {
 
     $this->mail->From = 'support@dianjoy.com';
     $this->mail->FromName = '点乐自助平台';
+    $this->mail->isHTML(true);
   }
 
   public function create( $template, $data = null ) {
