@@ -19,7 +19,7 @@ class BaseController {
   public function __construct() {
     // 在这里校验用户身份
     if ($this->need_auth && $_SERVER['REQUEST_METHOD'] != 'OPTIONS') {
-      if (empty($_SESSION['id']) || empty($_SESSION['role'])) {
+      if (!isset($_SESSION['id']) || !isset($_SESSION['role'])) {
         $this->exit_with_error(1, '登录失效', 401);
       }
     }
