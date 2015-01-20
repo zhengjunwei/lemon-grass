@@ -7,6 +7,8 @@
  */
 
 class UserController extends BaseController {
+  protected $need_auth = false;
+
   public function get_info() {
     if ($_SESSION['id']) {
       $result = array(

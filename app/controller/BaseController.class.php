@@ -14,8 +14,15 @@ class BaseController {
     422 => 'Unprocessable Entity',
   );
 
-  public function __construct() {
+  protected $need_auth = true;
 
+  public function __construct() {
+    // 在这里校验用户身份
+    if ($this->need_auth && $_SERVER['REQUEST_METHOD'] != 'OPTIONS') {
+      if (empty($_SESSION['id']) || empty($_SESSION['role'])) {
+        $this->exit_with_error(1, '登录失效', 401);
+      }
+    }
   }
 
   protected function get_pdo_read() {
@@ -36,11 +43,15 @@ class BaseController {
   protected function exit_with_error($code, $msg, $http_code, $debug = '') {
     header('Content-type: application/JSON; charset=UTF-8');
     header("HTTP/1.1 $http_code " . self::$HTTP_CODE[$http_code]);
-    exit(json_encode(array(
+    $result = array(
       'code' => $code,
       'msg' => $msg,
       'debug' => $debug,
-    )));
+    );
+    if ($http_code === 401) { // 登录失效或未登录
+      $result['me'] = array();
+    }
+    exit(json_encode($result));
   }
   protected function output($result) {
     header('Content-type: application/JSON; charset=UTF-8');

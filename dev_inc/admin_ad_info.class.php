@@ -120,7 +120,7 @@ class admin_ad_info extends ad_info {
   }
 
   public function get_ad_info_by_id(PDO $DB, $id ) {
-    $sql = "SELECT a.*, `owner`, `channel`, `cid`
+    $sql = "SELECT a.*, `owner`, `channel`, `cid`, `feedback`, `cycle`
             FROM `t_adinfo` a LEFT JOIN `t_ad_source` b ON a.id=b.id
             WHERE a.`id`=:id";
     $state = $DB->prepare($sql);
