@@ -13,7 +13,10 @@ Macaw::get(BASE . 'dashboard/', 'HomeController@dashboard');
 
 Macaw::options(BASE . 'file/', 'BaseController@on_options');
 
-Macaw::post(BASE . 'file/', 'BaseController@upload');
+Macaw::post(BASE . 'file/', 'FileController@upload');
+
+Macaw::options(BASE . 'fetch', 'BaseController@on_options');
+Macaw::post(BASE . 'fetch/', 'FileController@fetch');
 
 Macaw::error(function() {
   echo '404 :: Not Found';
