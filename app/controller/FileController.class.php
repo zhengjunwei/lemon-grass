@@ -7,6 +7,17 @@
  */
 
 class FileController extends BaseController {
+  private $raida_map = array(
+    'pack_name' => 'packagename',
+    'ad_name' => 'app_name',
+    'label' => 'app_category',
+    'pic_path' => 'icon_path',
+    'ad_size' => 'file_size',
+    'ad_lib' => 'app_versioncode',
+    'ad_shoot' => 'screenshots',
+    'ad_desc' => 'memo',
+  );
+
   public function upload() {
     $DB = $this->get_pdo_write();
 
@@ -88,7 +99,7 @@ class FileController extends BaseController {
     if (preg_match('/\.apk$/', $path)) {
       $result = $this->parse_apk($path, $type, $this->get_pdo_read(), $result);
     }
-    $result['url'] = UPLOAD_BASE === '' ? UPLOAD_URL . $path : str_replace(UPLOAD_BASE, UPLOAD_URL, $path);
+    $result['form']['ad_url'] = UPLOAD_BASE === '' ? UPLOAD_URL . $path : str_replace(UPLOAD_BASE, UPLOAD_URL, $path);
 
     $this->output($result);
   }
@@ -205,6 +216,12 @@ class FileController extends BaseController {
         $info    = $ad_info->get_ad_info_by_pack_name( $DB, $package['pack_name'] );
         if (!$info) { // 没有同包名的广告，再试试应用雷达
           $info = json_decode(file_get_contents('http://192.168.0.165/apk_info.php?pack_name=' . $package['pack_name']));
+          if ($info) {
+            foreach ( $this->raida_map as $key => $value ) {
+              $info[$key] = $info[$value];
+            }
+            $info['shoots'] = explode(',', $info['ad_shoot']);
+          }
         }
         $info['ad_shoot'] = $info['ad_shoot'] ? UPLOAD_URL . $info['ad_shoot'] : '';
         $info['pic_path'] = $info['pic_path'] ? UPLOAD_URL . $info['pic_path'] : '';
