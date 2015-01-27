@@ -512,9 +512,11 @@ class ADController extends BaseController {
     // 取欲修改的属性和值
     $key = '';
     $value = 0;
+    $label = '';
     if (isset($changed['today_left'])) { // 今日余量需转换成rmb
       $key = 'rmb';
       $value = (int)$changed['today_left'];
+      $label = '今日余量';
     }
     if (isset($changed['job_num'])) { // 每日投放需要看是否同时修改今日余量
       if (isset($changed['rmb'])) {
@@ -522,10 +524,12 @@ class ADController extends BaseController {
       }
       $key = 'job_num';
       $value = $changed['job_num'];
+      $label = '每日限量';
     }
     if (isset($changed['status'])) {
       $key = 'status';
       $value = $changed['status'];
+      $label = '上/下线';
     }
 
     // 对同一属性的修改不能同时有多个
@@ -554,14 +558,7 @@ class ADController extends BaseController {
     $info = $this->get_ad_info()->get_ad_info_by_id($DB, $id);
     $mail = new \diy\service\Mailer();
     $mail->send(OP_MAIL, '广告属性修改', $mail->create('apply-new', array_merge($info, array(
-      'key' => function ($key) {
-        $array = array(
-          'rmb' => '今日余量',
-          'job_num' => '每日限量',
-          'status' => '上/下线',
-        );
-        return $array[$key];
-      },
+      'label' => $label,
       'is_status' => $key == 'status',
       'value' => $value,
       'comment' => $attr['send_msg'],
