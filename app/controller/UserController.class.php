@@ -75,7 +75,7 @@ class UserController extends BaseController {
   }
 
   public function logout() {
-    $_SESSION['id'] = $_SESSION['fullname'] = $_SESSION['role'] = '';
+    session_destroy();
     $this->output(array(
       'code' => 0,
       'msg' => 'logout',

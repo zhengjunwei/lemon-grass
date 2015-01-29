@@ -648,6 +648,6 @@ class ADController extends BaseController {
    * @return string
    */
   private function createCompletePath( $url ) {
-    return ( preg_match( '/^upload\//', $url ) ? UPLOAD_BASE : '' ) . $url;
+    return ( preg_match( '/^upload\//', $url ) ? UPLOAD_URL : '' ) . $url;
   }
 } 
