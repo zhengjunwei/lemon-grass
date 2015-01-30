@@ -13,6 +13,7 @@ require '../config/config.php';
 use NoahBuscher\Macaw\Macaw;
 
 session_start();
+session_write_close();
 
 // routes
 require '../router/routes.php';

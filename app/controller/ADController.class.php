@@ -223,9 +223,17 @@ class ADController extends BaseController {
     // 省份
     if ($res['province_type'] == 1) {
       $provinces = admin_location::get_provinces_by_ad($DB, $id);
+      $put_provinces = array();
       foreach ( $options['provinces'] as $key => $province ) {
-        $options['provinces'][$key]['checked'] = in_array($province['key'], $provinces) ? 'checked' : '';
+        if (in_array($province['key'], $provinces)) {
+          $options['provinces'][$key]['checked'] = 'checked';
+          $put_provinces[] = array(
+            'id' => $key,
+            'value' => $province,
+          );
+        }
       }
+      $res['put_provinces'] = $put_provinces;
     }
 
     $options = array_merge($options, array(
