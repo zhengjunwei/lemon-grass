@@ -39,9 +39,9 @@ class HomeController extends BaseController {
 
     // 取最近发生变化的5个广告
     $latest = admin_ad_info::get_ad_info_by_owner($DB, $me, '', '', '', 0, 5, 'status_time');
-    foreach ( $latest as $id => $ad ) {
-      $ad['id'] = $id;
-      $latest[$id] = $ad;
+    foreach ( $latest as $id => $item ) {
+      $item['id'] = $id;
+      $latest[$id] = $item;
     }
     $latest = array_values($latest);
 

@@ -39,17 +39,8 @@ class UserController extends BaseController {
       $this->exit_with_error(2, '用户名或密码不能为空', 422);
     }
 
-    $password = md5($password .$username);
-    $pdo = $this->get_pdo_read();
-    $sql = "SELECT `id`,`QQ`,`permission`,`NAME`,`associate`
-            FROM `t_admin`
-            WHERE `username`=:username AND `password`=:password AND `status`=1";
-    $stat = $pdo->prepare($sql);
-    $stat->execute(array(
-      ':username' => $username,
-      ':password' => $password,
-    ));
-    $admin = $stat->fetch(PDO::FETCH_ASSOC);
+    $model = new Auth();
+    $admin = $model->validate($username, $password);
     if (!$admin) {
       $this->exit_with_error(3, '用户名或密码错误', 400);
     }
@@ -57,6 +48,7 @@ class UserController extends BaseController {
     if (!in_array((int)$admin['permission'], array(0, 1, 5, 6))) {
       $this->exit_with_error(4, '暂时只向商务开放', 400);
     }
+    session_start();
     $_SESSION['user'] = $username;
     $_SESSION['id'] = $admin['id'];
     $_SESSION['role'] = $admin['permission'];
