@@ -28,11 +28,12 @@ class ApplyController extends BaseController {
 
     $service = $this->get_service();
     $applies = $service->get_list($me, $keyword, $start, $pagesize);
-    $keys = array('status', 'job_num', 'rmb');
+    $keys = array('status', 'job_num', 'rmb', 'ad_url');
     $labels = array(
       'status' => '上下线',
       'job_num' => '每日限量',
       'rmb' => '今日余量',
+      'ad_url' => '替换包',
     );
     $today = mktime(0, 0, 0);
     $expires = array();
@@ -57,6 +58,9 @@ class ApplyController extends BaseController {
             $step_rmb = $service->get_ad_attr($apply['adid'], 'step_rmb');
             $apply['after'] = $apply['after'] / $step_rmb;
             $apply['before'] = $apply['before'] / $step_rmb;
+          }
+          if ($key == 'ad_url') {
+            $apply['is_url'] = true;
           }
           $applies[$index] = $apply;
           break;

@@ -393,8 +393,8 @@ class ADController extends BaseController {
     $attr = $attr ? $attr : $this->get_post_data();
 
     // 需要发申请的修改
-    if (array_key_exists('status', $attr) || array_key_exists('job_num', $attr)
-      || array_key_exists('today_left', $attr)) {
+    $apply_change = array('status', 'job_num', 'today_left', 'ad_url');
+    if (array_intersect($apply_change, array_keys($attr))) {
       return $this::send_apply($DB, $id, $attr);
     }
 
@@ -539,6 +539,11 @@ class ADController extends BaseController {
       $value = $changed['status'];
       $label = '上/下线';
     }
+    if (isset($changed['ad_url'])) {
+      $key = 'ad_url';
+      $value = $changed['ad_url'];
+      $label = '替换包';
+    }
 
     // 对同一属性的修改不能同时有多个
     $service = new \diy\service\Apply();
@@ -578,7 +583,7 @@ class ADController extends BaseController {
       'code' => 0,
       'msg' => 'apply received',
       'notice' => $notice_status ? '通知已发' : '通知失败',
-      'data' => $attr,
+      'ad' => $attr,
     ));
     return;
   }
