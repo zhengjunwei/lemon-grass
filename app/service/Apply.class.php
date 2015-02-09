@@ -103,10 +103,11 @@ class Apply extends Base {
   }
 
   public function is_available_same_attr($adid, $attr) {
+    $attr = $attr ? "`$attr` IS NOT NULL" : "`set_rmb` IS NULL AND `set_job_num` IS NULL AND `set_status` IS NULL AND `set_ad_url` IS NULL";
     $DB = $this->get_read_pdo();
     $sql = "SELECT 'X'
             FROM `" . self::$TABLE . "`
-            WHERE `adid`=:adid AND `status`=0 AND `$attr` IS NOT NULL";
+            WHERE `adid`=:adid AND `status`=0 AND $attr";
     $state = $DB->prepare($sql);
     $state->execute(array(':adid' => $adid));
     return $state->fetchColumn();

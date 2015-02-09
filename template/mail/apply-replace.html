@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>点乐自助平台-新广告创建通知</title>
+  <style>
+    .go-to-btn {
+      background-color: #337ab7;
+      color: #FFF;
+      display: inline-block;
+      line-height: 2em;
+      font-size: 1.2em;
+      text-decoration: none;
+      width: 200px;
+      text-align: center;
+      border-radius: 4px;
+    }
+    .go-to-btn:hover {
+      background-color: #286090;
+    }
+    .mt20 {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>广告包更新！</h1>
+<p class="lead">{{owner}}创建了一个广告，取代之前的广告，请审核。</p>
+
+<table width="100%">
+  <tr>
+    <th>原广告</th>
+    <td><a href="http://www.dianjoy.com/dev/admin/#/ad/edit/{{replace_id}}">原广告链接</a></td>
+  </tr>
+  <tr>
+    <th>新广告</th>
+    <td><a href="http://www.dianjoy.com/dev/admin/#/ad/edit/{{id}}">新广告链接</a></td>
+  </tr>
+  <tr>
+    <th>广告名</th>
+    <td>{{ad_name}}</td>
+  </tr>
+  <tr>
+    <th>广告主报价</th>
+    <td>{{quote_rmb}}</td>
+  </tr>
+  <tr>
+    <th>渠道名称</th>
+    <td>{{channel}}</td>
+  </tr>
+  <tr>
+    <th>完成条件</th>
+    <td>{{cate}}</td>
+  </tr>
+  <tr>
+    <th>备注</th>
+    <td>{{others}}</td>
+  </tr>
+</table>
+
+<a href="http://www.dianjoy.com/dev/admin/#/ad/apply/" target="_blank" class="go-to-btn mt20">立即处理</a>
+</body>
+</html>

@@ -3,9 +3,7 @@
   "description": "a backend provide RESTful api",
   "require": {
     "mustache/mustache": "~2.7",
-    "illuminate/database": "*",
     "noahbuscher/macaw": "dev-master",
-    "filp/whoops": "~1.0",
     "phpmailer/phpmailer": "~5.2"
   },
   "license": "MIT",
@@ -20,7 +18,7 @@
     "classmap": [
       "app/controller",
       "app/service",
-      "app/SQLHelper.class.php"
+      "app/helper"
     ]
   }
 }

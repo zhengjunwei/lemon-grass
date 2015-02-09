@@ -11,6 +11,7 @@ class Notification extends \diy\service\Base {
 
   static $NEW_AD = 20;
   static $EDIT_AD = 21;
+  public static $REPLACE_AD = 28;
   static $EDIT_AD_COMMENT = 26;
 
   static $NORMAL = 0;

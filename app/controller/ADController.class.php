@@ -29,32 +29,35 @@ class ADController extends BaseController {
    */
   public function get_list() {
     $DB = $this->get_pdo_read();
-    $ad_info =  $this->get_ad_info();
+    $service =  new \diy\service\AD();
     $me = $_SESSION['id'];
 
-    $keyword = isset($_REQUEST['keyword']) ? $_REQUEST['keyword'] : FALSE;
     $pagesize = isset($_REQUEST['pagesize']) ? (int)$_REQUEST['pagesize'] : 10;
     $page = isset($_REQUEST['page']) ? (int)$_REQUEST['page'] : 0;
     $page_start = $page * $pagesize;
+    $filters = array(
+      'keyword' => $_REQUEST['keyword'],
+      'pack_name' => $_REQUEST['pack_name'],
+      'salesman' => $me,
+    );
 
-    $res = $ad_info->get_ad_info_by_owner($DB, $me, '', '', $keyword, $page_start, $pagesize);
-    $total = $ad_info->get_ad_number_by_owner($DB, $me, '', '', $keyword);
-    $adids = array_keys(array_filter($res));
+    $res = $service->get_ad_info($filters, $page_start, $pagesize);
+    $total = $service->get_ad_number($filters);
+    $ad_ids = array_keys(array_filter($res));
     $users = array();
     foreach ( $res as $value ) {
       $users[] = $value['execute_owner'];
     }
-
     // 取总投放量
-    $rmb_out = $ad_info->get_rmb_out_by_ad($DB, $adids);
+    $rmb_out = $service->get_rmb_out_by_ad($ad_ids);
 
     // 取商务名单
-    require dirname(__FILE__) . '/../../dev_inc/admin.class.php';
-    $users = admin::get_user_info_by_id($DB, implode(',', array_filter(array_unique($users))));
+    $user_service = new \diy\service\User();
+    $users = $user_service->get_user_info(array('id' => array_filter(array_unique($users))));
 
     // 取当前申请
     $apply = new \diy\service\Apply();
-    $applies = $apply->get_list_by_id($adids);
+    $applies = $apply->get_list_by_id($ad_ids);
     $applies_by_ad = array();
     foreach ( $applies as $id => $apply ) {
       $adid = $apply['adid'];
@@ -74,7 +77,7 @@ class ADController extends BaseController {
       $applies_by_ad[$adid][] = array_filter($apply);
     }
 
-    $ad_jobs = admin_ad_info::get_all_ad_job($DB);
+    $ad_jobs = $service->get_all_ad_job();
 
     $channels = array();
     $ads = array();
@@ -279,6 +282,16 @@ class ADController extends BaseController {
     $attr['status'] = 2; // 新建，待审核
     $attr['create_user'] = $channel['execute_owner'] = $me;
     $attr['create_time'] = $now;
+    $replace_id = '';
+    if ($attr['replace']) {
+      $replace_id = $attr['replace-with'];
+      $attr['status_time'] = $attr['replace-time'];
+      $attr = array_omit($attr, 'replace', 'replace-with', 'replace-time');
+      $this->send_apply($DB, $id, array(
+        'replace_id' => $replace_id,
+        'message' => $attr['others'],
+      ));
+    }
 
     //广告投放地理位置信息
     if ($attr['province_type'] == 1 && isset($attr['provinces'])) {
@@ -349,18 +362,21 @@ class ADController extends BaseController {
       $this->exit_with_error(24, '插入广告主后台信息失败', 400, SQLHelper::$info);
     }
 
-    // 给运营发通知
-    $notice = new Notification();
-    $notice_status = $notice->send(array(
-      'ad_id' => $id,
-      'alarm_type' => Notification::$NEW_AD,
-      'create_time' => $now,
-    ));
+    if (!$replace_id) {
+      // 给运营发通知
+      $notice = new Notification();
+      $notice_status = $notice->send(array(
+        'ad_id' => $id,
+        'alarm_type' => Notification::$NEW_AD,
+        'create_time' => $now,
+      ));
 
-    // 给运营发邮件
-    $mail = new \diy\service\Mailer();
-    $subject = '商务[' . $_SESSION['fullname'] . ']创建新广告：' . $attr['channel'] . ' ' . $attr['ad_name'];
-    $mail->send(OP_MAIL, $subject, $mail->create('ad-new', $attr));
+      // 给运营发邮件
+      $mail = new \diy\service\Mailer();
+      $subject = '商务[' . $_SESSION['fullname'] . ']创建新广告：' . $attr['channel'] . ' ' . $attr['ad_name'];
+      $mail->send(OP_MAIL, $subject, $mail->create('ad-new', $attr));
+    }
+
 
     $this->output(array(
       'code' => 0,
@@ -503,12 +519,13 @@ class ADController extends BaseController {
    * 发送申请
    * @param PDO $DB
    * @param $id
-   * @param array $changed
+   * @param [optional] array $changed
    *
    * @return null
    */
-  private function send_apply(PDO $DB, $id, array $changed ) {
+  private function send_apply(PDO $DB, $id, array $changed = null ) {
     $now = date('Y-m-d H:i:s');
+    $replace_id = isset($changed['replace_id']) ? $changed['replace_id'] : '';
     $attr = array(
       'userid' => $_SESSION['id'],
       'adid' => $id,
@@ -516,13 +533,14 @@ class ADController extends BaseController {
       'send_msg' => trim($changed['message']),
     );
     unset($changed['message']);
+    unset($changed['replace_id']);
 
     // 取欲修改的属性和值
     $key = '';
-    $value = 0;
-    $label = '';
+    $value = '';
+    $label = '替换新包';
     if (isset($changed['today_left'])) { // 今日余量需转换成rmb
-      $key = 'rmb';
+      $key = 'set_rmb';
       $value = (int)$changed['today_left'];
       $label = '今日余量';
     }
@@ -530,28 +548,30 @@ class ADController extends BaseController {
       if (isset($changed['rmb'])) {
         $attr['set_rmb'] = $changed['job_num'];
       }
-      $key = 'job_num';
+      $key = 'set_job_num';
       $value = $changed['job_num'];
       $label = '每日限量';
     }
     if (isset($changed['status'])) {
-      $key = 'status';
+      $key = 'set_status';
       $value = $changed['status'];
       $label = '上/下线';
     }
     if (isset($changed['ad_url'])) {
-      $key = 'ad_url';
+      $key = 'set_ad_url';
       $value = $changed['ad_url'];
       $label = '替换包';
     }
 
     // 对同一属性的修改不能同时有多个
     $service = new \diy\service\Apply();
-    if ($service->is_available_same_attr($id, 'set_' . $key)) {
+    if ($service->is_available_same_attr($id, $key)) {
       $this->exit_with_error(41, '该属性上次修改申请还未审批，不能再次修改', 400);
     }
 
-    $attr['set_' . $key] = $value;
+    if ($key) {
+      $attr[$key] = $value;
+    }
     $check = SQLHelper::insert($DB, self::$T_APPLY, $attr);
     if (!$check) {
       $this->exit_with_error(40, '创建申请失败', 403, SQLHelper::$info);
@@ -561,18 +581,23 @@ class ADController extends BaseController {
     // 给运营发通知
     $notice = new Notification();
     $notice_status = $notice->send(array(
-      'ad_id' => $id,
+      'ad_id' => $replace_id,
       'uid' => $attr['id'],
-      'alarm_type' => Notification::$EDIT_AD,
+      'alarm_type' => $replace_id ? Notification::$REPLACE_AD : Notification::$EDIT_AD,
       'create_time' => $now,
+      'app_id' => $id, // 用appid字段保存被替换的广告id
     ));
 
     // 给运营发邮件
-    $info = $this->get_ad_info()->get_ad_info_by_id($DB, $id);
+    $info = $this->get_ad_info()->get_ad_info_by_id($DB, $replace_id);
     $mail = new \diy\service\Mailer();
-    $mail->send(OP_MAIL, '广告属性修改', $mail->create('apply-new', array_merge($info, array(
+    $subject = $replace_id ? '替换成新广告' : '广告属性修改';
+    $template = $replace_id ? 'apply-replace': 'apply-new';
+    $mail->send(OP_MAIL, $subject, $mail->create($template, array_merge($info, array(
+      'id' => id,
+      'replace_id' => $replace_id,
       'label' => $label,
-      'is_status' => $key == 'status',
+      'is_status' => $key == 'set_status',
       'value' => $value,
       'comment' => $attr['send_msg'],
       'owner' => $_SESSION['fullname'],
