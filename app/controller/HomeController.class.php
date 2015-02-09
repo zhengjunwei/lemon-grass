@@ -51,7 +51,6 @@ class HomeController extends BaseController {
       $transfer[$key]['date'] = $key;
     }
 
-
     $result = array(
       'code' => 0,
       'msg' => 'ok',
@@ -67,6 +66,6 @@ class HomeController extends BaseController {
         'transfer' => $transfer,
       ),
     );
-    exit(json_encode($result));
+    $this->output($result);
   }
 } 

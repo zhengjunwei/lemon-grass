@@ -31,7 +31,7 @@ class Base {
    */
   protected function get_write_pdo() {
     $this->DB_write = $this->DB_write ? $this->DB_write : require dirname(__FILE__) . '/../../inc/pdo.php';
-    return $this->DB_writeDB;
+    return $this->DB_write;
   }
 
   public function __construct() {

@@ -9,12 +9,15 @@
 namespace diy\service;
 
 
+use PDO;
+
 class User extends Base {
   public function get_user_info($filters) {
     $DB = $this->get_read_pdo();
+    $filter_sql = $this->parse_filter($filters);
     $sql = "SELECT `id`, `NAME`
             FROM `t_admin`
-            WHERE `id` IN ($owner)";
+            WHERE `status`=0 $filter_sql";
     return $DB->query($sql)->fetchAll(PDO::FETCH_KEY_PAIR);
   }
 }

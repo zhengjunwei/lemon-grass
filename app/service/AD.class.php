@@ -27,13 +27,12 @@ class AD extends Base {
     $filter = $this->parse_filter($filters);
     $sql = "SELECT a.`id`, `ad_name`, `create_time`, `status_time`, `quote_rmb`,
               `step_rmb`, `status`, `owner`, `execute_owner`, `channel`, `cid`,
-              `others`, `rmb`
+              `others`, `rmb`, `pack_name`
             FROM `t_adinfo` a LEFT JOIN `t_ad_source` b ON a.`id`=b.`id`
               LEFT JOIN `t_adinfo_rmb` r ON a.`id`=r.`id`
             WHERE `status`>=0 $filter
             ORDER BY `$order` DESC
             LIMIT $page_start, $pagesize";
-    var_dump($sql);
     return $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC|PDO::FETCH_UNIQUE);
   }
 

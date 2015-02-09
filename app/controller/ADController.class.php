@@ -28,7 +28,6 @@ class ADController extends BaseController {
    * @since 0.1.0
    */
   public function get_list() {
-    $DB = $this->get_pdo_read();
     $service =  new \diy\service\AD();
     $me = $_SESSION['id'];
 
@@ -559,7 +558,7 @@ class ADController extends BaseController {
     }
     if (isset($changed['ad_url'])) {
       $key = 'set_ad_url';
-      $value = $changed['ad_url'];
+      $value = str_replace(UPLOAD_URL, '', $changed['ad_url']);
       $label = '替换包';
     }
 

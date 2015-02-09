@@ -25,6 +25,18 @@ class BaseController {
     }
   }
 
+  public function on_options() {
+    header('Access-Control-Allow-Headers: accept, content-type');
+    header('Access-Control-Allow-Methods: GET,PUT,POST,PATCH,DELETE');
+    header('Access-Control-Allow-Origin: ' . $this->get_allow_origin());
+
+    exit(json_encode(array(
+      'code' => 0,
+      'method' => 'options',
+      'msg' => 'ready',
+    )));
+  }
+
   protected function get_pdo_read() {
     return require dirname(__FILE__) . '/../../inc/pdo_slave.php';
   }
@@ -42,6 +54,7 @@ class BaseController {
 
   protected function exit_with_error($code, $msg, $http_code, $debug = '') {
     header('Content-type: application/JSON; charset=UTF-8');
+    header('Access-Control-Allow-Origin: ' . $this->get_allow_origin());
     header("HTTP/1.1 $http_code " . self::$HTTP_CODE[$http_code]);
     $result = array(
       'code' => $code,
@@ -55,17 +68,16 @@ class BaseController {
   }
   protected function output($result) {
     header('Content-type: application/JSON; charset=UTF-8');
+    header('Access-Control-Allow-Origin: ' . $this->get_allow_origin());
     exit(json_encode($result));
   }
 
-  public function on_options() {
-    header('Access-Control-Allow-Headers: accept, content-type');
-    header('Access-Control-Allow-Methods: GET,PUT,POST,PATCH,DELETE');
-
-    exit(json_encode(array(
-      'code' => 0,
-      'method' => 'options',
-      'msg' => 'ready',
-    )));
+  protected function get_allow_origin() {
+    $origins = explode(',', ALLOW_ORIGIN);
+    $from = $_SERVER['HTTP_ORIGIN'];
+    if (in_array($from, $origins)) {
+      return $from;
+    }
+    return 'null';
   }
 } 
