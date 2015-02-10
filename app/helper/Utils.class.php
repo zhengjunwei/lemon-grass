@@ -44,7 +44,7 @@ class Utils {
   }
 
   public static function array_flatten($array){
-    return iterator_to_array(new \RecursiveIteratorIterator(new \RecursiveArrayIterator($array)));
+    return iterator_to_array(new \RecursiveIteratorIterator(new \RecursiveArrayIterator($array)), false);
   }
 
   /**

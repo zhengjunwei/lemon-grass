@@ -6,6 +6,10 @@
  * Time: 下午2:01
  */
 
+use diy\service\Apply;
+use diy\service\User;
+use diy\utils\Utils;
+
 class ADController extends BaseController {
   static $T_CALLBACK = 't_adinfo_callback';
   static $T_IOS_INFO = 't_adinfo_ios';
@@ -51,11 +55,11 @@ class ADController extends BaseController {
     $rmb_out = $service->get_rmb_out_by_ad($ad_ids);
 
     // 取商务名单
-    $user_service = new \diy\service\User();
+    $user_service = new User();
     $users = $user_service->get_user_info(array('id' => array_filter(array_unique($users))));
 
     // 取当前申请
-    $apply = new \diy\service\Apply();
+    $apply = new Apply();
     $applies = $apply->get_list_by_id($ad_ids);
     $applies_by_ad = array();
     foreach ( $applies as $id => $apply ) {
@@ -274,9 +278,9 @@ class ADController extends BaseController {
     $attr = $this->validate( $attr );
 
     // 拆分不同表的数据
-    $callback = array_pick($attr, self::$FIELDS_CALLBACK);
-    $channel = array_pick($attr, self::$FIELDS_CHANNEL);
-    $attr = array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, 'total_num');
+    $callback = Utils::array_pick($attr, self::$FIELDS_CALLBACK);
+    $channel = Utils::array_pick($attr, self::$FIELDS_CHANNEL);
+    $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, 'total_num');
     $attr['id'] = $callback['ad_id'] = $channel['id'] = $id;
     $attr['status'] = 2; // 新建，待审核
     $attr['create_user'] = $channel['execute_owner'] = $me;
@@ -285,11 +289,7 @@ class ADController extends BaseController {
     if ($attr['replace']) {
       $replace_id = $attr['replace-with'];
       $attr['status_time'] = $attr['replace-time'];
-      $attr = array_omit($attr, 'replace', 'replace-with', 'replace-time');
-      $this->send_apply($DB, $id, array(
-        'replace_id' => $replace_id,
-        'message' => $attr['others'],
-      ));
+      $attr = Utils::array_omit($attr, 'replace', 'replace-with', 'replace-time');
     }
 
     //广告投放地理位置信息
@@ -361,20 +361,27 @@ class ADController extends BaseController {
       $this->exit_with_error(24, '插入广告主后台信息失败', 400, SQLHelper::$info);
     }
 
-    if (!$replace_id) {
-      // 给运营发通知
-      $notice = new Notification();
-      $notice_status = $notice->send(array(
-        'ad_id' => $id,
-        'alarm_type' => Notification::$NEW_AD,
-        'create_time' => $now,
-      ));
-
-      // 给运营发邮件
-      $mail = new \diy\service\Mailer();
-      $subject = '商务[' . $_SESSION['fullname'] . ']创建新广告：' . $attr['channel'] . ' ' . $attr['ad_name'];
-      $mail->send(OP_MAIL, $subject, $mail->create('ad-new', $attr));
+    // 给运营发修改申请
+    if ($replace_id) {
+      $this->send_apply( $DB, $id, array(
+        'replace_id' => $replace_id,
+        'message'    => $attr['others'],
+      ) );
+      return;
     }
+
+    // 给运营发新广告通知
+    $notice = new Notification();
+    $notice_status = $notice->send(array(
+      'ad_id' => $id,
+      'alarm_type' => Notification::$NEW_AD,
+      'create_time' => $now,
+    ));
+
+    // 给运营发邮件
+    $mail = new \diy\service\Mailer();
+    $subject = '商务[' . $_SESSION['fullname'] . ']创建新广告：' . $attr['channel'] . ' ' . $attr['ad_name'];
+    $mail->send(OP_MAIL, $subject, $mail->create('ad-new', $attr));
 
 
     $this->output(array(
@@ -527,10 +534,12 @@ class ADController extends BaseController {
     $replace_id = isset($changed['replace_id']) ? $changed['replace_id'] : '';
     $attr = array(
       'userid' => $_SESSION['id'],
+      'id' => $id,
       'adid' => $id,
       'create_time' => $now,
       'send_msg' => trim($changed['message']),
     );
+    $apply = array();
     unset($changed['message']);
     unset($changed['replace_id']);
 
@@ -563,7 +572,7 @@ class ADController extends BaseController {
     }
 
     // 对同一属性的修改不能同时有多个
-    $service = new \diy\service\Apply();
+    $service = new Apply();
     if ($service->is_available_same_attr($id, $key)) {
       $this->exit_with_error(41, '该属性上次修改申请还未审批，不能再次修改', 400);
     }
@@ -575,13 +584,13 @@ class ADController extends BaseController {
     if (!$check) {
       $this->exit_with_error(40, '创建申请失败', 403, SQLHelper::$info);
     }
-    $attr['id'] = SQLHelper::$lastInsertId;
+    $apply['id'] = SQLHelper::$lastInsertId;
 
     // 给运营发通知
     $notice = new Notification();
     $notice_status = $notice->send(array(
       'ad_id' => $replace_id,
-      'uid' => $attr['id'],
+      'uid' => $apply['id'],
       'alarm_type' => $replace_id ? Notification::$REPLACE_AD : Notification::$EDIT_AD,
       'create_time' => $now,
       'app_id' => $id, // 用appid字段保存被替换的广告id
@@ -593,7 +602,7 @@ class ADController extends BaseController {
     $subject = $replace_id ? '替换成新广告' : '广告属性修改';
     $template = $replace_id ? 'apply-replace': 'apply-new';
     $mail->send(OP_MAIL, $subject, $mail->create($template, array_merge($info, array(
-      'id' => id,
+      'id' => $id,
       'replace_id' => $replace_id,
       'label' => $label,
       'is_status' => $key == 'set_status',
@@ -608,6 +617,7 @@ class ADController extends BaseController {
       'msg' => 'apply received',
       'notice' => $notice_status ? '通知已发' : '通知失败',
       'ad' => $attr,
+      'apply' => $apply,
     ));
     return;
   }
