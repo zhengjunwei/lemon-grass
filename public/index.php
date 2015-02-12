@@ -13,7 +13,7 @@ require '../config/config.php';
 use NoahBuscher\Macaw\Macaw;
 
 session_start();
-session_write_close();
+header('Access-Control-Allow-Origin: ' . BaseController::get_allow_origin());
 
 // routes
 require '../router/routes.php';

@@ -25,10 +25,19 @@ class BaseController {
     }
   }
 
+  public static function get_allow_origin() {
+    $origins = explode(',', ALLOW_ORIGIN);
+    $from = $_SERVER['HTTP_ORIGIN'];
+    if (in_array($from, $origins)) {
+      return $from;
+    }
+    return 'null';
+  }
+
   public function on_options() {
     header('Access-Control-Allow-Headers: accept, content-type');
     header('Access-Control-Allow-Methods: GET,PUT,POST,PATCH,DELETE');
-    header('Access-Control-Allow-Origin: ' . $this->get_allow_origin());
+    header('Content-type: application/JSON; charset=UTF-8');
 
     exit(json_encode(array(
       'code' => 0,
@@ -53,9 +62,8 @@ class BaseController {
   }
 
   protected function exit_with_error($code, $msg, $http_code, $debug = '') {
-    header('Content-type: application/JSON; charset=UTF-8');
-    header('Access-Control-Allow-Origin: ' . $this->get_allow_origin());
     header("HTTP/1.1 $http_code " . self::$HTTP_CODE[$http_code]);
+    header('Content-type: application/JSON; charset=UTF-8');
     $result = array(
       'code' => $code,
       'msg' => $msg,
@@ -68,16 +76,6 @@ class BaseController {
   }
   protected function output($result) {
     header('Content-type: application/JSON; charset=UTF-8');
-    header('Access-Control-Allow-Origin: ' . $this->get_allow_origin());
     exit(json_encode($result));
-  }
-
-  protected function get_allow_origin() {
-    $origins = explode(',', ALLOW_ORIGIN);
-    $from = $_SERVER['HTTP_ORIGIN'];
-    if (in_array($from, $origins)) {
-      return $from;
-    }
-    return 'null';
   }
 } 

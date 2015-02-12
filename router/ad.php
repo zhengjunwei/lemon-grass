@@ -25,3 +25,5 @@ Macaw::get(BASE . 'apply/', 'ApplyController@get_list');
 Macaw::options(BASE . 'apply/(:any)', 'BaseController@on_options');
 
 Macaw::delete(BASE . 'apply/(:any)', 'ApplyController@delete');
+
+Macaw::get(BASE . 'info/', 'HistoryInfo@get_list');

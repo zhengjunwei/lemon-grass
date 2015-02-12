@@ -33,7 +33,13 @@ class AD extends Base {
             WHERE `status`>=0 $filter
             ORDER BY `$order` DESC
             LIMIT $page_start, $pagesize";
-    return $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC|PDO::FETCH_UNIQUE);
+    $state = $DB->query($sql);
+    if ($state) {
+      return $state->fetchAll(PDO::FETCH_ASSOC | PDO::FETCH_UNIQUE);
+    } else {
+      header('sql: ' . $sql);
+      header('error: ' . json_encode($DB->errorInfo()));
+    }
   }
 
   /**
@@ -89,7 +95,7 @@ class AD extends Base {
           break;
 
         case 'keyword':
-          $result .= $value ? " AND (`ad_name` LIKE '%$value%' OR `channel` LIKE `%$value%')" : '';
+          $result .= $value ? " AND (`ad_name` LIKE '%$value%' OR `channel` LIKE '%$value%')" : '';
           break;
 
         case 'salesman':

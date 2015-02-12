@@ -288,6 +288,7 @@ class ADController extends BaseController {
     $replace_id = '';
     if ($attr['replace']) {
       $replace_id = $attr['replace-with'];
+      $attr['status'] = 3; // 欲替换之前的广告
       $attr['status_time'] = $attr['replace-time'];
       $attr = Utils::array_omit($attr, 'replace', 'replace-with', 'replace-time');
     }
