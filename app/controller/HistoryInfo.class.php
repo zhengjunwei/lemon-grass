@@ -59,6 +59,7 @@ class HistoryInfo extends BaseController {
       $item = Utils::array_pick($ad, 'ad_name', 'others', 'create_time', 'quote_rmb', 'payment', 'quote');
       $item['status'] = $rmb_out[$key] > 0;
       $item['payment_percent'] = round($item['payment'] / $item['quote'] * 100, 2);
+      $item['id'] = $key;
       $result[] = $item;
     }
 
