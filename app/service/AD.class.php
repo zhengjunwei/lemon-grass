@@ -88,10 +88,11 @@ class AD extends Base {
               AND `transfer_date`>'$start' AND `transfer_date`<'$end'";
     $transfers = $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     foreach ( $transfers as $transfer ) {
-      if (array_key_exists($transfer['ad_id'], $result)) {
-        $result['ad_id'] += $transfer['transfer_total'];
+      $ad_id = $transfer['ad_id'];
+      if (array_key_exists($ad_id, $result)) {
+        $result[$ad_id] += $transfer['transfer_total'];
       } else {
-        $result['ad_id'] = $transfer['transfer_total'];
+        $result[$ad_id] = $transfer['transfer_total'];
       }
     }
     return $result;

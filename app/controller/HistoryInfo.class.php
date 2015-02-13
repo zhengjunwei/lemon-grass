@@ -28,11 +28,12 @@ class HistoryInfo extends BaseController {
 
     // 取出最早最晚的创建时间
     // 这里假定广告创建后很快就会上线，结束时间以最迟的广告顺延一个月
-    $start = '';
+    $start = date('Y-m-d H:i:s');
     $end = '';
-    foreach ( $ads as $ad ) {
+    foreach ( $ads as &$ad ) {
       $start = $start < $ad['create_time'] ? $start : $ad['create_time'];
       $end= $end > $ad['create_time'] ? $end : $ad['create_time'];
+      $ad['payment'] = $ad['quote_rmb'] = 0;
     }
     $end = date('Y-m-d H:i:s', strtotime($end) + 2592000);
 
@@ -48,16 +49,16 @@ class HistoryInfo extends BaseController {
     foreach ( $payments as $payment ) {
       $ad_id = $payment['id'];
       $month = substr($payment['month'], 0, 7);
-      $ads[$ad_id]['payment'] += $payment['rmb'];
-      $ads[$ad_id]['quote_rmb'] += $quotes[$ad_id][$month];
+      $ads[$ad_id]['payment'] += (int)$payment['rmb'];
+      $ads[$ad_id]['quote'] += (int)$quotes[$ad_id][$month];
     }
 
 
     $result = array();
     foreach ( $ads as $key => $ad ) {
-      $item = Utils::array_pick($ad, 'ad_name', 'others', 'create_time', 'quote_rmb');
+      $item = Utils::array_pick($ad, 'ad_name', 'others', 'create_time', 'quote_rmb', 'payment', 'quote');
       $item['status'] = $rmb_out[$key] > 0;
-      $item['payment_percent'] = round($item['payment'] / $item['quote_rmb'] * 100, 2);
+      $item['payment_percent'] = round($item['payment'] / $item['quote'] * 100, 2);
       $result[] = $item;
     }
 
