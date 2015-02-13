@@ -68,6 +68,35 @@ class AD extends Base {
     return $DB->query($sql)->fetchAll(PDO::FETCH_COLUMN | PDO::FETCH_UNIQUE);
   }
 
+  /**
+   * 从最近一个月的数据中查询广告是否跑出量
+   * TODO 过年后让汪慧增加索引，改成不限时间的
+   *
+   * @param $ad_ids
+   * @param $start
+   * @param $end
+   *
+   * @return array
+   */
+  public function get_transfer_by_ad($ad_ids, $start, $end) {
+    $DB = $this->get_read_pdo();
+    $ad_ids = is_array($ad_ids) ? implode("','", $ad_ids) : $ad_ids;
+    $result = array();
+    $sql = "SELECT `ad_id`, `transfer_total`
+            FROM `s_transfer_stat_ad`
+            WHERE `ad_id` IN ('$ad_ids')
+              AND `transfer_date`>'$start' AND `transfer_date`<'$end'";
+    $transfers = $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    foreach ( $transfers as $transfer ) {
+      if (array_key_exists($transfer['ad_id'], $result)) {
+        $result['ad_id'] += $transfer['transfer_total'];
+      } else {
+        $result['ad_id'] = $transfer['transfer_total'];
+      }
+    }
+    return $result;
+  }
+
   public function get_all_ad_job() {
     $DB = $this->get_read_pdo();
     $the_day_after_tomorrow = date("Y-m-d", time() + 86400 * 2);

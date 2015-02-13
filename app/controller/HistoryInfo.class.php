@@ -1,5 +1,7 @@
 <?php
 use diy\service\AD;
+use diy\service\Payment;
+use diy\service\Quote;
 use diy\utils\Utils;
 
 /**
@@ -22,9 +24,40 @@ class HistoryInfo extends BaseController {
     $ads = $service->get_ad_info(array(
       'keyword' => $query,
     ));
-    $result = array();
+    $ad_ids = array_keys($ads);
+
+    // 取出最早最晚的创建时间
+    // 这里假定广告创建后很快就会上线，结束时间以最迟的广告顺延一个月
+    $start = '';
+    $end = '';
     foreach ( $ads as $ad ) {
+      $start = $start < $ad['create_time'] ? $start : $ad['create_time'];
+      $end= $end > $ad['create_time'] ? $end : $ad['create_time'];
+    }
+    $end = date('Y-m-d H:i:s', strtotime($end) + 2592000);
+
+
+    // 取广告运行状态
+    $rmb_out = $service->get_transfer_by_ad($ad_ids, $start, $end);
+
+    // 取广告结算状态
+    $payment_service = new Payment();
+    $quote_service = new Quote();
+    $payments = $payment_service->get_payment($ad_ids, $start, $end);
+    $quotes = $quote_service->get_quote($ad_ids, $start, $end);
+    foreach ( $payments as $payment ) {
+      $ad_id = $payment['id'];
+      $month = substr($payment['month'], 0, 7);
+      $ads[$ad_id]['payment'] += $payment['rmb'];
+      $ads[$ad_id]['quote_rmb'] += $quotes[$ad_id][$month];
+    }
+
+
+    $result = array();
+    foreach ( $ads as $key => $ad ) {
       $item = Utils::array_pick($ad, 'ad_name', 'others', 'create_time', 'quote_rmb');
+      $item['status'] = $rmb_out[$key] > 0;
+      $item['payment_percent'] = round($item['payment'] / $item['quote_rmb'] * 100, 2);
       $result[] = $item;
     }
 
