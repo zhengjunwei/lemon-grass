@@ -33,7 +33,7 @@ class HistoryInfo extends BaseController {
     foreach ( $ads as &$ad ) {
       $start = $start < $ad['create_time'] ? $start : $ad['create_time'];
       $end= $end > $ad['create_time'] ? $end : $ad['create_time'];
-      $ad['payment'] = $ad['quote_rmb'] = 0;
+      $ad['payment'] = $ad['quote'] = 0;
     }
     $end = date('Y-m-d H:i:s', strtotime($end) + 2592000);
 
