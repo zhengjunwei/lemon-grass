@@ -7,7 +7,7 @@
  */
 
 class FileController extends BaseController {
-  private $raida_map = array(
+  private $radar_map = array(
     'pack_name' => 'packagename',
     'ad_name' => 'app_name',
     'label' => 'app_category',
@@ -26,7 +26,7 @@ class FileController extends BaseController {
       $this->exit_with_error(1, '无法获取文件，请检查服务器设置。', 400);
     }
 
-    $id = isset($_REQUEST['id']) && $_REQUEST['id'] != '' && $_REQUEST['id'] != 'undefined' ? $_REQUEST['id'] : '';
+    $id = isset($_REQUEST['id']) && $_REQUEST['id'] != '' && $_REQUEST['id'] != 'undefined' ? $_REQUEST['id'] : $this->create_id();
     $type = isset($_REQUEST['name']) ? $_REQUEST['name'] : 'ad_url';
     $file_name = $file['name'];
     $upload_user = $_SESSION['id'];
@@ -54,11 +54,14 @@ class FileController extends BaseController {
       'msg' => 'uploaded',
       'id' => $id,
       'url' => $url,
+      'form' => array(),
     );
 
     if (preg_match('/\.apk$/', $new_path)) { // 仅解释apk文件，其他直接返回空
-      $result = $this->parse_apk( $new_path, $type, $DB, $result );
+      $package = $this->parse_apk( $new_path, $type, $DB);
+      $result = array_merge($result, $package);
     }
+    $result['form']['id'] = $id;
 
     $this->output($result);
   }
@@ -77,29 +80,28 @@ class FileController extends BaseController {
     }
 
     // 已经在我们的机器上了，直接分析
+    $result = array(
+      'code' => 0,
+      'form' => array(),
+      'id' => $id,
+    );
     if (preg_match(LOCAL_FILE, $file)) {
-      $result = array(
-        'code' => 0,
-        'msg' => 'exist',
-        'id' => $id,
-      );
+      $result['msg'] = 'exist';
       $path = preg_replace(LOCAL_FILE, UPLOAD_BASE, $file);
     } else {
       $path = $this->get_file_path($type, $file, $id);
       file_put_contents($path, file_get_contents($file));
 
       // 生成反馈
-      $result = array(
-        'code' => 0,
-        'msg' => 'fetched',
-        'id' => $id,
-      );
+      $result['msg'] = 'fetched';
     }
 
     if (preg_match('/\.apk$/', $path)) {
-      $result = $this->parse_apk($path, $type, $this->get_pdo_read(), $result);
+      $package = $this->parse_apk($path, $type, $this->get_pdo_read(), $result);
+      array_merge($result, $package);
     }
     $result['form']['ad_url'] = UPLOAD_BASE === '' ? UPLOAD_URL . $path : str_replace(UPLOAD_BASE, UPLOAD_URL, $path);
+    $result['form']['id'] = $id;
 
     $this->output($result);
   }
@@ -188,11 +190,10 @@ class FileController extends BaseController {
    * @param $new_path
    * @param $type
    * @param $DB
-   * @param $result
    *
    * @return array
    */
-  private function parse_apk( $new_path, $type, $DB, $result ) {
+  private function parse_apk( $new_path, $type, $DB ) {
     try {
       require_once( dirname( __FILE__ ) . '/../../dev_inc/apk_parser.class.php' );
       require dirname( __FILE__ ) . '/../../app/utils/functions.php';
@@ -217,7 +218,7 @@ class FileController extends BaseController {
         if (!$info) { // 没有同包名的广告，再试试应用雷达
           $info = json_decode(file_get_contents('http://192.168.0.165/apk_info.php?pack_name=' . $package['pack_name']));
           if ($info) {
-            foreach ( $this->raida_map as $key => $value ) {
+            foreach ( $this->radar_map as $key => $value ) {
               $info[$key] = $info[$value];
             }
             $info['shoots'] = explode(',', $info['ad_shoot']);
@@ -227,13 +228,15 @@ class FileController extends BaseController {
         $info['pic_path'] = $info['pic_path'] ? UPLOAD_URL . $info['pic_path'] : '';
       }
 
-      $result = array_merge( $result, array(
+      $result = array(
         'md5'        => md5_file( $new_path ),
         'permission' => $permission,
         'form'       => array_merge( $package, (array) $info ),
-      ) );
+      );
     } catch ( Exception $e ) {
-      $result['pack_error'] = $e->getMessage();
+      $result = array(
+        'error' => $e->getMessage(),
+      );
     }
 
     return $result;
@@ -248,5 +251,12 @@ class FileController extends BaseController {
   private function get_resize_path( $path, $suffix ) {
     $offset = strrpos($path, '.');
     return substr($path, 0, $offset) . $suffix . substr($path, $offset);
+  }
+
+  /**
+   * @return string
+   */
+  private function create_id() {
+    return md5(uniqid());
   }
 }
