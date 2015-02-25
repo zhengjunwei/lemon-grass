@@ -11,6 +11,7 @@ class BaseController {
     400 => 'Bad Request',
     401 => 'Unauthorized',
     403 => 'Forbidden',
+    408 => 'Request Timeout',
     422 => 'Unprocessable Entity',
   );
 

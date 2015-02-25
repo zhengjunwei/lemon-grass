@@ -30,6 +30,14 @@ class FileController extends BaseController {
     $type = isset($_REQUEST['name']) ? $_REQUEST['name'] : 'ad_url';
     $file_name = $file['name'];
     $upload_user = $_SESSION['id'];
+    $md5 = $_REQUEST['md5'];
+
+    if ($md5) {
+      $file_md5 = md5_file($file['tmp_name']);
+      if ($md5 != $file_md5) {
+        $this->exit_with_error(2, '文件MD5不一致，上传失败', 408);
+      }
+    }
 
     $new_path = $this->get_file_path( $type, $file_name, $id );
 
@@ -229,7 +237,6 @@ class FileController extends BaseController {
       }
 
       $result = array(
-        'md5'        => md5_file( $new_path ),
         'permission' => $permission,
         'form'       => array_merge( $package, (array) $info ),
       );
