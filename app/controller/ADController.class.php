@@ -403,7 +403,7 @@ class ADController extends BaseController {
    * @author Meathill
    * @since 0.1.0
    *
-   * @param $id
+   * @param string $id 广告id
    * @param array [optional] $attr
    *
    * @return null
@@ -535,7 +535,6 @@ class ADController extends BaseController {
     $replace_id = isset($changed['replace_id']) ? $changed['replace_id'] : '';
     $attr = array(
       'userid' => $_SESSION['id'],
-      'id' => $id,
       'adid' => $id,
       'create_time' => $now,
       'send_msg' => trim($changed['message']),
