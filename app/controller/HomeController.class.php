@@ -1,4 +1,7 @@
 <?php
+use diy\service\AD;
+use diy\service\Transfer;
+
 /**
  * Created by PhpStorm.
  * User: meathill
@@ -12,33 +15,42 @@ class HomeController extends BaseController {
   }
 
   public function dashboard() {
-    require dirname(__FILE__) . '/../../dev_inc/admin_ad_info.class.php';
-    $DB = require dirname(__FILE__) . '/../../inc/pdo_slave.php';
-
-    $week_ago = date('Y-m-d H:i:s', time() - 691200);
-    $month_ago = date('Y-m-d H:i:s', time() - 2678400);
-    $yesterday = date('Y-m-d H:i:s', time() - 86400);
+    $week_ago = date('Y-m-d', time() - 691200);
+    $month_ago = date('Y-m-d', time() - 2678400);
+    $yesterday = date('Y-m-d', time() - 86400);
     $me = $_SESSION['id'];
+    $service = new AD();
+    $transfer = new Transfer();
 
     // 取在线广告数
-    $ad = admin_ad_info::get_ad_online_number_by_owner($DB, $me);
-    $adids = admin_ad_info::get_adids_by_owner($DB, $me, $month_ago);
-    $adids = implode("','", $adids);
+    $ad = $service->get_ad_number(array(
+      'owner' => $me,
+      'status' => 0,
+    ));
+    $adids = $service->get_ad_ids(array(
+      'owner' => $me,
+      'start' => $month_ago,
+    ));
 
     // 取一周内激活数
-    require dirname(__FILE__) . '/../../dev_inc/transfer_stat.class.php';
-    $t = new transfer_stat();
-    $transfer = $t->get_ad_transfer_by_ads($DB, $week_ago, $yesterday, $adids);
-    $transfer_total = 0;
-    foreach ( $transfer as $day ) {
+    $transfers = $transfer->get_ad_transfer(array(
+      'start' => $week_ago,
+      'end' => $yesterday,
+      'ad_id' => $adids,
+    ));
+    $transfer_total = $rmb_total = 0;
+    foreach ( $transfers as $day ) {
       $transfer_total += $day['transfer'];
+      $rmb_total += $day['rmb'];
     }
 
     // 取一周内下载数
     $download = 0;
 
     // 取最近发生变化的5个广告
-    $latest = admin_ad_info::get_ad_info_by_owner($DB, $me, '', '', '', 0, 5, 'status_time');
+    $latest = $service->get_ad_info(array(
+      'owner' => $me,
+    ), 0, 5, 'status_time');
     foreach ( $latest as $id => $item ) {
       $item['id'] = $id;
       $latest[$id] = $item;
@@ -46,10 +58,11 @@ class HomeController extends BaseController {
     $latest = array_values($latest);
 
     // 取一个月内的流量统计
-    $transfer = $t->get_ad_transfer_by_ads($DB, $month_ago, $yesterday, $adids);
-    foreach ( $transfer as $key => $value ) {
-      $transfer[$key]['date'] = $key;
-    }
+    $chart_transfer = $transfer->get_ad_transfer(array(
+      'start' => $month_ago,
+      'end' => $yesterday,
+      'ad_id' => $adids,
+    ), 'transfer_date');
 
     $result = array(
       'code' => 0,
@@ -58,12 +71,12 @@ class HomeController extends BaseController {
         'ad' => $ad,
         'total_transfer' => $transfer_total,
         'total_download' => $download,
-        'money' => 0,
+        'money' => $rmb_total / 100,
         'cash' => 0,
         'saved' => 0,
         'percent' => 0,
         'record' => $latest,
-        'transfer' => $transfer,
+        'transfer' => $chart_transfer,
       ),
     );
     $this->output($result);

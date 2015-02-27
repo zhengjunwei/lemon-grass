@@ -42,9 +42,11 @@ class Base {
    * 根据传入的过滤数组取出过滤sql
    *
    * @param array $filters
+   * @param bool $is_append 是否为追加条件
+   *
    * @return string
    */
-  protected function parse_filter($filters) {
+  protected function parse_filter($filters, $is_append = false) {
     $sql = '';
     if (is_array($filters)) {
       foreach ($filters as $key => $filter) {
@@ -58,6 +60,6 @@ class Base {
         }
       }
     }
-    return $sql;
+    return $is_append ? $sql : substr($sql, 5);
   }
 } 

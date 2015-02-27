@@ -2,6 +2,7 @@
 use diy\service\AD;
 use diy\service\Payment;
 use diy\service\Quote;
+use diy\service\Transfer;
 use diy\utils\Utils;
 
 /**
@@ -21,6 +22,7 @@ class HistoryInfo extends BaseController {
       ));
     }
     $service = new AD();
+    $transfer = new Transfer();
     $ads = $service->get_ad_info(array(
       'keyword' => $query,
     ));
@@ -28,18 +30,26 @@ class HistoryInfo extends BaseController {
 
     // 取出最早最晚的创建时间
     // 这里假定广告创建后很快就会上线，结束时间以最迟的广告顺延一个月
-    $start = date('Y-m-d H:i:s');
+    $start = date('Y-m-d');
     $end = '';
     foreach ( $ads as &$ad ) {
       $start = $start < $ad['create_time'] ? $start : $ad['create_time'];
       $end= $end > $ad['create_time'] ? $end : $ad['create_time'];
       $ad['payment'] = $ad['quote'] = 0;
     }
-    $end = date('Y-m-d H:i:s', strtotime($end) + 2592000);
+    $end = date('Y-m-d', strtotime($end) + 2592000);
 
 
     // 取广告运行状态
-    $rmb_out = $service->get_transfer_by_ad($ad_ids, $start, $end);
+    $rmb_out = $transfer->get_ad_transfer(array(
+      'ad_id' => $ad_ids,
+      'start' => $start,
+      'end' => $end
+    ), 'ad_id');
+    foreach ( $rmb_out as $rmb ) {
+      $rmb_out[$rmb['ad_id']] = $rmb['transfer'];
+    }
+
 
     // 取广告结算状态
     $payment_service = new Payment();
@@ -58,7 +68,7 @@ class HistoryInfo extends BaseController {
     foreach ( $ads as $key => $ad ) {
       $item = Utils::array_pick($ad, 'ad_name', 'others', 'create_time', 'quote_rmb', 'payment', 'quote');
       $item['status'] = $rmb_out[$key] > 0;
-      $item['payment_percent'] = round($item['payment'] / $item['quote'] * 100, 2);
+      $item['payment_percent'] = $item['quote'] != 0 ? round($item['payment'] / $item['quote'] * 100, 2) : 0;
       $item['id'] = $key;
       $result[] = $item;
     }

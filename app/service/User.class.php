@@ -14,7 +14,7 @@ use PDO;
 class User extends Base {
   public function get_user_info($filters) {
     $DB = $this->get_read_pdo();
-    $filter_sql = $this->parse_filter($filters);
+    $filter_sql = $this->parse_filter($filters, true);
     $sql = "SELECT `id`, `NAME`
             FROM `t_admin`
             WHERE `status`=0 $filter_sql";
