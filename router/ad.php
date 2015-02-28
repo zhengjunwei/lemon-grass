@@ -14,7 +14,7 @@ Macaw::get(BASE . 'ad/(:any)', 'ADController@init');
 
 Macaw::options(BASE . 'ad/(:any)', 'BaseController@on_options');
 
-Macaw::post(BASE . 'ad/(:any)', 'ADController@create');
+Macaw::post(BASE . 'ad/', 'ADController@create');
 
 Macaw::patch(BASE . 'ad/(:any)', 'ADController@update');
 
