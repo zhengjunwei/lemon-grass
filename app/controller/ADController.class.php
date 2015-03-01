@@ -554,13 +554,17 @@ class ADController extends BaseController {
     }
     if (isset($changed['job_num'])) { // 每日投放需要看是否同时修改今日余量
       if (isset($changed['rmb'])) {
-        $attr['set_rmb'] = $changed['job_num'];
+        $attr['set_rmb'] = $changed['set_rmb'] = $changed['job_num'];
+        unset($changed['rmb']);
       }
       $key = 'set_job_num';
       $value = $changed['job_num'];
       $label = '每日限量';
     }
     if (isset($changed['status'])) {
+      if ($changed['status-time']) {
+        $attr['handle_time'] = $changed['status-time'];
+      }
       $key = 'set_status';
       $value = $changed['status'];
       $label = '上/下线';
@@ -616,7 +620,7 @@ class ADController extends BaseController {
       'code' => 0,
       'msg' => 'apply received',
       'notice' => $notice_status ? '通知已发' : '通知失败',
-      'ad' => $attr,
+      'ad' => array_merge($changed, $attr),
       'apply' => $apply,
     ));
     return;
