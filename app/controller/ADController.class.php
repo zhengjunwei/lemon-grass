@@ -270,10 +270,10 @@ class ADController extends BaseController {
     require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
     require dirname(__FILE__) . '/../../app/utils/array.php';
 
-    $id = $CM->id1();
     $me = $_SESSION['id'];
     $now = date('Y-m-d H:i:s');
     $attr = $this->get_post_data();
+    $id = isset($attr['id']) ? $attr['id'] : $CM->id1();
 
     $attr = $this->validate( $attr );
 
@@ -390,7 +390,7 @@ class ADController extends BaseController {
       'msg' => '创建广告成功。相关通知' . ($notice_status ? '已发' : '失败'),
       'notice' => $notice_status ? '通知已发' : '通知失败',
       'ad' => array(
-        'id' => $id
+        'id' => $id,
       ),
     ));
   }
@@ -662,6 +662,11 @@ class ADController extends BaseController {
       if ($attr[$key]) {
         $attr[$key] = str_replace(UPLOAD_URL, '', $attr[$key]);
       }
+    }
+
+    // 去掉没用的replace
+    if (empty($attr['replace'])) {
+      unset($attr['replace']);
     }
 
     // 对数据进行预处理
