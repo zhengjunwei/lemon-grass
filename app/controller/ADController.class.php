@@ -593,11 +593,11 @@ class ADController extends BaseController {
     // 给运营发通知
     $notice = new Notification();
     $notice_status = $notice->send(array(
-      'ad_id' => $replace_id,
+      'ad_id' => $replace_id ? $replace_id : $id,
       'uid' => $apply['id'],
       'alarm_type' => $replace_id ? Notification::$REPLACE_AD : Notification::$EDIT_AD,
       'create_time' => $now,
-      'app_id' => $id, // 用appid字段保存被替换的广告id
+      'app_id' => $replace_id ? $id : '', // 用appid字段保存被替换的广告id
     ));
 
     // 给运营发邮件
