@@ -6,6 +6,7 @@
  * Time: 下午2:01
  */
 
+use diy\service\AD;
 use diy\service\Apply;
 use diy\service\User;
 use diy\utils\Utils;
@@ -32,7 +33,7 @@ class ADController extends BaseController {
    * @since 0.1.0
    */
   public function get_list() {
-    $service =  new \diy\service\AD();
+    $service =  new AD();
     $me = $_SESSION['id'];
 
     $pagesize = isset($_REQUEST['pagesize']) ? (int)$_REQUEST['pagesize'] : 10;
@@ -77,7 +78,7 @@ class ADController extends BaseController {
       }
       $key = array_keys($apply)[0]; // 因为过滤掉了没有内容的键，又删掉了adid，只剩下要操作的key了
       $apply[$key . '_id'] = $id;
-      $applies_by_ad[$adid][] = array_filter($apply);
+      $applies_by_ad[$adid][] = $apply;
     }
 
     $ad_jobs = $service->get_all_ad_job();
@@ -411,21 +412,23 @@ class ADController extends BaseController {
   public function update($id, $attr = null) {
     $DB = $this->get_pdo_write();
     require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
-    require dirname(__FILE__) . '/../../app/utils/array.php';
 
     $attr = $attr ? $attr : $this->get_post_data();
 
     // 需要发申请的修改
-    $apply_change = array('status', 'job_num', 'today_left', 'ad_url');
+    $apply_change = array('job_num', 'today_left', 'ad_url');
     if (array_intersect($apply_change, array_keys($attr))) {
-      return $this::send_apply($DB, $id, $attr);
+      return $this->send_apply($DB, $id, $attr);
+    }
+    if (array_key_exists('status', $attr) && $attr['status'] != -2) { // 修改状态，不是删除
+      return $this->send_apply($DB, $id, $attr);
     }
 
     $attr = $this->validate($attr, $id);
     // 拆分不同表的数据
-    $callback = array_pick($attr, self::$FIELDS_CALLBACK);
-    $channel = array_pick($attr, self::$FIELDS_CHANNEL);
-    $attr = array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, 'total_num');
+    $callback = Utils::array_pick($attr, self::$FIELDS_CALLBACK);
+    $channel = Utils::array_pick($attr, self::$FIELDS_CHANNEL);
+    $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, 'total_num');
 
     // 更新广告信息
     $check = SQLHelper::update($DB, self::$T_INFO, $attr, $id);
@@ -471,7 +474,7 @@ class ADController extends BaseController {
         $this->exit_with_error(32, '修改iOS专属数据失败', 400);
       }
     } else if ($callback['click_url']) { // 有回调再插入
-      $callback = array_pick($callback, 'id', 'salt', 'click_url', 'ip');
+      $callback = Utils::array_pick($callback, 'id', 'salt', 'click_url', 'ip');
       $check = SQLHelper::update($DB, self::$T_CALLBACK, $callback, $id);
       if (!$check) {
         $this->exit_with_error(33, '修改Android回调信息失败', 400);
@@ -500,24 +503,23 @@ class ADController extends BaseController {
    * @param $id
    */
   public function delete($id) {
-    $ad_info = $this->get_ad_info();
-    $DB = $this->get_pdo_read();
+    $service = new AD();
 
     // 拒绝操作跑出量的广告
-    $rmb_out = $ad_info->get_rmb_out_by_ad($DB, $id);
+    $rmb_out = $service->get_rmb_out_by_ad($id);
     if ($rmb_out[$id] > 0) {
       $this->exit_with_error(50, '此广告已经推广，不能删除。您可以将其下线。', 400);
     }
 
     // 拒绝操作别人的广告
     $me = $_SESSION['id'];
-    $check = $ad_info->check_ad_owner($DB, $id, $me);
+    $check = $service->check_ad_owner($id, $me);
     if (!$check) {
       $this->exit_with_error(51, '您无权操作此广告', 403);
     }
 
     $attr = array(
-      'status' => -1,
+      'status' => -2,
     );
     $this->update($id, $attr);
   }
@@ -620,7 +622,7 @@ class ADController extends BaseController {
       'code' => 0,
       'msg' => 'apply received',
       'notice' => $notice_status ? '通知已发' : '通知失败',
-      'ad' => array_merge($changed, $attr),
+      'ad' => $attr,
       'apply' => $apply,
     ));
     return;

@@ -98,10 +98,14 @@ class FileController extends BaseController {
       $path = preg_replace(LOCAL_FILE, UPLOAD_BASE, $file);
     } else {
       $path = $this->get_file_path($type, $file, $id);
-      file_put_contents($path, file_get_contents($file));
-
-      // 生成反馈
-      $result['msg'] = 'fetched';
+      try {
+        $content = file_get_contents($file);
+        file_put_contents($path, $content);
+        // 生成反馈
+        $result['msg'] = 'fetched';
+      } catch (Exception $e) {
+        $this->exit_with_error(2, '找不到目标文件，无法完成抓取。', 404);
+      }
     }
 
     if (preg_match('/\.apk$/', $path)) {
@@ -223,8 +227,12 @@ class FileController extends BaseController {
         require dirname( __FILE__ ) . '/../../dev_inc/admin_ad_info.class.php';
         $ad_info = new admin_ad_info();
         $info    = $ad_info->get_ad_info_by_pack_name( $DB, $package['pack_name'] );
-        if (!$info) { // 没有同包名的广告，再试试应用雷达
-          $info = json_decode(file_get_contents('http://192.168.0.165/apk_info.php?pack_name=' . $package['pack_name']));
+        if (!$info && !defined('DEBUG')) { // 没有同包名的广告，再试试应用雷达
+          try {
+            $info = json_decode(file_get_contents('http://192.168.0.165/apk_info.php?pack_name=' . $package['pack_name']));
+          } catch (Exception $e) {
+
+          }
           if ($info) {
             foreach ( $this->radar_map as $key => $value ) {
               $info[$key] = $info[$value];

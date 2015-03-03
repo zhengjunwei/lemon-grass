@@ -59,9 +59,8 @@ class ApplyController extends BaseController {
             $apply['after'] = $apply['after'] / $step_rmb;
             $apply['before'] = $apply['before'] / $step_rmb;
           }
-          if ($key == 'ad_url') {
-            $apply['is_url'] = true;
-          }
+          $apply['is_url'] = $key == 'ad_url';
+          $apply['is_status'] = $key == 'status';
           $applies[$index] = $apply;
           break;
         }

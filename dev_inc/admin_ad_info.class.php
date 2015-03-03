@@ -110,7 +110,7 @@ class admin_ad_info extends ad_info {
   public function check_ad_owner(PDO $DB, $id, $me) {
     $sql = "SELECT 'x'
             FROM `t_adinfo` i LEFT JOIN `t_ad_source` s ON i.id=s.id
-            WHERE `id`=:id AND owner=:me";
+            WHERE `id`=:id AND (`owner`=:me OR `execute_owner`=:me)";
     $state = $DB->prepare($sql);
     $state->execute(array(
       ':id' => $id,

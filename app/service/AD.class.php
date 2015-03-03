@@ -88,6 +88,19 @@ class AD extends Base {
     return $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC|PDO::FETCH_UNIQUE|PDO::FETCH_GROUP);
   }
 
+  public function check_ad_owner( $id, $me ) {
+    $DB = $this->get_read_pdo();
+    $sql = "SELECT 'x'
+            FROM `t_adinfo` i LEFT JOIN `t_ad_source` s ON i.`id`=s.`id`
+            WHERE i.`id`=:id AND (`owner`=:me OR `execute_owner`=:me)";
+    $state = $DB->prepare($sql);
+    $state->execute(array(
+      ':id' => $id,
+      ':me' => $me,
+    ));
+    return $state->fetchColumn();
+  }
+
   protected function parse_filter($filters, $is_append = false) {
     $spec = array('keyword', 'start', 'end', 'salesman');
     $pick = Utils::array_pick($filters, $spec);
