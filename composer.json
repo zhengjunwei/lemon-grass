@@ -4,7 +4,8 @@
   "require": {
     "mustache/mustache": "~2.7",
     "noahbuscher/macaw": "dev-master",
-    "phpmailer/phpmailer": "~5.2"
+    "phpmailer/phpmailer": "~5.2",
+    "tufanbarisyildirim/php-apk-parser": "dev-master"
   },
   "license": "MIT",
   "version": "0.1.0",

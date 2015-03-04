@@ -87,12 +87,12 @@ class FileController extends BaseController {
       ));
     }
 
-    // 已经在我们的机器上了，直接分析
     $result = array(
       'code' => 0,
       'form' => array(),
       'id' => $id,
     );
+    // 已经在我们的机器上了，直接分析
     if (preg_match(LOCAL_FILE, $file)) {
       $result['msg'] = 'exist';
       $path = preg_replace(LOCAL_FILE, UPLOAD_BASE, $file);
@@ -110,7 +110,7 @@ class FileController extends BaseController {
 
     if (preg_match('/\.apk$/', $path)) {
       $package = $this->parse_apk($path, $type);
-      array_merge($result, $package);
+      $result = array_merge($result, $package);
     }
     $result['form']['ad_url'] = UPLOAD_BASE === '' ? UPLOAD_URL . $path : str_replace(UPLOAD_BASE, UPLOAD_URL, $path);
     $result['form']['id'] = $id;
@@ -206,17 +206,13 @@ class FileController extends BaseController {
   private function parse_apk( $new_path, $type ) {
     $DB = $this->get_pdo_read();
     try {
-      require_once( dirname( __FILE__ ) . '/../../dev_inc/apk_parser.class.php' );
       require dirname( __FILE__ ) . '/../../app/utils/functions.php';
-      $p = new ApkParser();
-      $p->open( $new_path );
-      $permission = $p->getPermission();
-      foreach ( $permission as $key => $value ) {
-        $permission[ $key ] = str_replace( '.', '-', $value );
-      }
+      $apk = new ApkParser\Parser($new_path);
+      $manifest = $apk->getManifest();
+      $permission = $manifest->getPermissions();
       $package = array(
-        'pack_name' => $p->getPackage(),
-        'ad_lib'    => $p->getVersionName(),
+        'pack_name' => $manifest->getPackageName(),
+        'ad_lib'    => $manifest->getVersionName(),
         'ad_size'   => format_file_size( filesize( $new_path ) ),
       );
 
