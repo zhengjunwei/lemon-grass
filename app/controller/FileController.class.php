@@ -66,7 +66,7 @@ class FileController extends BaseController {
     );
 
     if (preg_match('/\.apk$/', $new_path)) { // 仅解释apk文件，其他直接返回空
-      $package = $this->parse_apk( $new_path, $type, $DB);
+      $package = $this->parse_apk( $new_path, $type);
       $result = array_merge($result, $package);
     }
     $result['form']['id'] = $id;
@@ -75,9 +75,9 @@ class FileController extends BaseController {
   }
 
   public function fetch() {
-    $file = $_POST['file'];
+    $file = trim($_POST['file']);
     $type = isset($_REQUEST['name']) ? $_REQUEST['name'] : 'ad_url';
-    $id = isset($_REQUEST['id']) && $_REQUEST['id'] != '' && $_REQUEST['id'] != 'undefined' ? $_REQUEST['id'] : '';
+    $id = isset($_REQUEST['id']) && $_REQUEST['id'] != '' && $_REQUEST['id'] != 'undefined' ? $_REQUEST['id'] : $this->create_id();
 
     // 过滤不抓取的情况
     if (preg_match('/itunes\.apple\.com/', $file)) {
@@ -109,7 +109,7 @@ class FileController extends BaseController {
     }
 
     if (preg_match('/\.apk$/', $path)) {
-      $package = $this->parse_apk($path, $type, $this->get_pdo_read(), $result);
+      $package = $this->parse_apk($path, $type);
       array_merge($result, $package);
     }
     $result['form']['ad_url'] = UPLOAD_BASE === '' ? UPLOAD_URL . $path : str_replace(UPLOAD_BASE, UPLOAD_URL, $path);
@@ -130,7 +130,6 @@ class FileController extends BaseController {
     $CM = new CM;
     $path = isset( $CM->uppath[ $type ] ) ? $CM->uppath[ $type ] : 'upload/';
     $dir = UPLOAD_BASE . $path . date( "Ym" ) . '/';
-    $id = $id ? $id : $CM->id1();
     if ( ! is_dir( $dir ) ) {
       mkdir( $dir, 0777, true );
     }
@@ -201,11 +200,11 @@ class FileController extends BaseController {
   /**
    * @param $new_path
    * @param $type
-   * @param $DB
    *
    * @return array
    */
-  private function parse_apk( $new_path, $type, $DB ) {
+  private function parse_apk( $new_path, $type ) {
+    $DB = $this->get_pdo_read();
     try {
       require_once( dirname( __FILE__ ) . '/../../dev_inc/apk_parser.class.php' );
       require dirname( __FILE__ ) . '/../../app/utils/functions.php';
