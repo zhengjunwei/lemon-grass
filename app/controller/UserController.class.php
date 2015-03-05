@@ -6,6 +6,8 @@
  * Time: 下午1:35
  */
 
+use diy\service\Auth;
+
 class UserController extends BaseController {
   protected $need_auth = false;
 

@@ -8,6 +8,8 @@
 
 namespace diy\service;
 
+use PDO;
+
 class Auth extends Base {
   public function validate($username, $password) {
     $password = md5($password .$username);
