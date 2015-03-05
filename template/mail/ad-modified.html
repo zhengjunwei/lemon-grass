@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>点乐自助平台-广告修改通知</title>
+  <style>
+    .go-to-btn {
+      background-color: #337ab7;
+      color: #FFF;
+      display: inline-block;
+      line-height: 2em;
+      font-size: 1.2em;
+      text-decoration: none;
+      width: 200px;
+      text-align: center;
+      border-radius: 4px;
+    }
+    .go-to-btn:hover {
+      background-color: #286090;
+    }
+    .mt20 {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+<h1>广告修改通知</h1>
+<p class="lead">{{owner}}修改了广告{{channel}} {{ad_name}} {{cid}}的备注。请知悉。</p>
+
+<table border="1" cellpadding="5" cellspacing="1">
+  <caption>变动如下</caption>
+  <tr>
+    <th>修改内容</th>
+    <td>广告备注</td>
+  </tr>
+  <tr>
+    <th>修改为</th>
+    <td>
+      {{others}}
+    </td>
+  </tr>
+</table>
+
+<a href="http://www.dianjoy.com/dev/admin/#/ad/list/" target="_blank" class="go-to-btn mt20">立即处理</a>
+</body>
+</html>

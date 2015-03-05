@@ -1,4 +1,8 @@
 <?php
+use diy\service\AD;
+use diy\service\FileLog;
+use diy\utils\Utils;
+
 /**
  * Created by PhpStorm.
  * User: meathill
@@ -19,8 +23,6 @@ class FileController extends BaseController {
   );
 
   public function upload() {
-    $DB = $this->get_pdo_write();
-
     $file = $_FILES['file'];
     if (!$file) {
       $this->exit_with_error(1, '无法获取文件，请检查服务器设置。', 400);
@@ -29,7 +31,6 @@ class FileController extends BaseController {
     $id = isset($_REQUEST['id']) && $_REQUEST['id'] != '' && $_REQUEST['id'] != 'undefined' ? $_REQUEST['id'] : $this->create_id();
     $type = isset($_REQUEST['name']) ? $_REQUEST['name'] : 'ad_url';
     $file_name = $file['name'];
-    $upload_user = $_SESSION['id'];
     $md5 = $_REQUEST['md5'];
 
     if ($md5) {
@@ -52,8 +53,8 @@ class FileController extends BaseController {
     move_uploaded_file($file['tmp_name'], $new_path);
 
     // 记录到log里
-    require_once(dirname(__FILE__) . '/../../dev_inc/upload.class.php');
-    upload::insert($DB, $id, $type, $new_path, $upload_user, $file_name);
+    $service = new FileLog();
+    $service->insert($id, $type, $new_path, $file_name);
 
     // 生成反馈
     $url = UPLOAD_BASE === '' ? UPLOAD_URL . $new_path : str_replace(UPLOAD_BASE, UPLOAD_URL, $new_path);
@@ -204,24 +205,21 @@ class FileController extends BaseController {
    * @return array
    */
   private function parse_apk( $new_path, $type ) {
-    $DB = $this->get_pdo_read();
     try {
-      require dirname( __FILE__ ) . '/../../app/utils/functions.php';
       $apk = new ApkParser\Parser($new_path);
       $manifest = $apk->getManifest();
       $permission = $manifest->getPermissions();
       $package = array(
         'pack_name' => $manifest->getPackageName(),
         'ad_lib'    => $manifest->getVersionName(),
-        'ad_size'   => format_file_size( filesize( $new_path ) ),
+        'ad_size'   => Utils::format_file_size( filesize( $new_path ) ),
       );
 
       $info = array();
       if ( $type == 'ad_url' ) {
         // 从数据库读相同包名的广告有哪些可以直接用的数据
-        require dirname( __FILE__ ) . '/../../dev_inc/admin_ad_info.class.php';
-        $ad_info = new admin_ad_info();
-        $info    = $ad_info->get_ad_info_by_pack_name( $DB, $package['pack_name'] );
+        $ad_service = new AD();
+        $info = $ad_service->get_ad_info_by_pack_name($package['pack_name']);
         if (!$info && !defined('DEBUG')) { // 没有同包名的广告，再试试应用雷达
           try {
             $info = json_decode(file_get_contents('http://192.168.0.165/apk_info.php?pack_name=' . $package['pack_name']));

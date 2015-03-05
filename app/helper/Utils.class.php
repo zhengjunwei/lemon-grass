@@ -67,4 +67,18 @@ class Utils {
 
     return $result;
   }
+
+  public static function format_file_size ($size) {
+    $units = array('B', 'KB', 'MB', 'GB');
+
+    if ($size > 0) {
+      $unit = intval(log($size, 1024));
+
+      if (array_key_exists($unit, $units)) {
+        return round($size / pow(1024, $unit), 2) . $units[$unit];
+      }
+    }
+
+    return $size;
+  }
 }

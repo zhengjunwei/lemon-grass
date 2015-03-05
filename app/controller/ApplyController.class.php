@@ -1,4 +1,6 @@
 <?php
+use diy\service\Apply;
+
 /**
  * Created by PhpStorm.
  * Date: 2014/11/23
@@ -10,10 +12,10 @@
 
 class ApplyController extends BaseController {
   /**
-   * @return \diy\service\Apply
+   * @return Apply
    */
   private function get_service() {
-    return new \diy\service\Apply();
+    return new Apply();
   }
 
   /**
@@ -70,7 +72,7 @@ class ApplyController extends BaseController {
 
     // 作废申请
     $service->update(array(
-      'status' => \diy\service\Apply::EXPIRED
+      'status' => Apply::EXPIRED
     ), $expires);
 
     // 取用户姓名
@@ -112,7 +114,7 @@ class ApplyController extends BaseController {
 
     $attr = array(
       'handler' => $me,
-      'status' => \diy\service\Apply::WITHDRAWN,
+      'status' => Apply::WITHDRAWN,
     );
     $check = $service->update($attr, $id);
     if (!$check) {

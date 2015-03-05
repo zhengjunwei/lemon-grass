@@ -6,7 +6,9 @@
  * Time: 下午5:06
  */
 
-class Auth extends \diy\service\Base {
+namespace diy\service;
+
+class Auth extends Base {
   public function validate($username, $password) {
     $password = md5($password .$username);
     $pdo = $this->get_read_pdo();

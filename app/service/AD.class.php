@@ -68,6 +68,19 @@ class AD extends Base {
     return $DB->query($sql)->fetchAll(PDO::FETCH_COLUMN);
   }
 
+  public function get_ad_info_by_pack_name($pack_name) {
+    $DB = $this->get_read_pdo();
+    $sql = "SELECT `ad_name`, `ad_app_type`, `pic_path`, `ad_desc`,
+              `cpc_cpa`, `ad_shoot`, `cate`, `ad_type`
+            FROM `t_adinfo`
+            WHERE `pack_name`=:pack_name
+            ORDER BY `create_time` DESC
+            LIMIT 1";
+    $state = $DB->prepare($sql);
+    $state->execute(array(':pack_name' => $pack_name));
+    return $state->fetch(PDO::FETCH_ASSOC);
+  }
+
   public function get_rmb_out_by_ad($ad_ids) {
     $DB = $this->get_read_pdo();
     $ad_ids = is_array($ad_ids) ? implode("','", $ad_ids) : $ad_ids;
