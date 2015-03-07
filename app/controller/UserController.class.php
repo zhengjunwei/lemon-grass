@@ -41,8 +41,8 @@ class UserController extends BaseController {
       $this->exit_with_error(2, '用户名或密码不能为空', 422);
     }
 
-    $model = new Auth();
-    $admin = $model->validate($username, $password);
+    $service = new Auth();
+    $admin = $service->validate($username, $password);
     if (!$admin) {
       $this->exit_with_error(3, '用户名或密码错误', 400);
     }
