@@ -9,7 +9,7 @@
 class StatController extends BaseController {
   public function get_ad_stat() {
     $DB = $this->get_pdo_read();
-    $me = defined('DEBUG') ? 4 : $_SESSION['id'];
+    $me = 82;//$_SESSION['id'];
 
     $today = date('Y-m-d');
     $week = date('Y-m-d', time() - 604800);
@@ -52,17 +52,14 @@ class StatController extends BaseController {
         $aid = count($ads);
         $ads[] = $ad_name;
       }
-      $ad = array(
+      $ad = array_merge($value, array(
         'id' => $key,
-        'channel_id' => $value['cid'],
         'channel' => $channel,
         'cid' => $cid,
         'ad_name' => $ad_name,
         'aid' => $aid,
-        'ctime' => date('m-d', strtotime($value['create_time'])),
-        'status' => $value['status'],
         'device1' => isset($transfer_res[$key]) ? (int)$transfer_res[$key]['transfer'] : 0,
-      );
+      ));
       $ad_stat[] = $ad;
     }
 
