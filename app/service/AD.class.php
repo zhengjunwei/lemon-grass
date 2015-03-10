@@ -24,6 +24,10 @@ class AD extends Base {
    */
   public function get_ad_info($filters, $page_start = 0, $pagesize = 10, $order = 'create_time') {
     $DB = $this->get_read_pdo();
+    if (array_key_exists('id', $filters)) {
+      $filters['a.id'] = $filters['id'];
+      unset($filters['id']);
+    }
     $filter = $this->parse_filter($filters);
     $sql = "SELECT a.`id`, `ad_name`, `create_time`, `status_time`, `quote_rmb`,
               `step_rmb`, `status`, `owner`, `execute_owner`, `channel`, `cid`,

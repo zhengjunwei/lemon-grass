@@ -51,11 +51,13 @@ class Base {
     if (is_array($filters)) {
       foreach ($filters as $key => $filter) {
         if (isset($filter)) {
+          $point = strpos($key, '.');
+          $key = $point !== false ? substr($key, 0, $point + 1) . '`' . substr($key, $point + 1) . '`' : "`$key`";
           if (is_array($filter)) {
             $filter = implode("','", $filter);
-            $sql .= " AND `$key` IN ('$filter')";
+            $sql .= " AND $key IN ('$filter')";
           } else {
-            $sql .= " AND `$key`='$filter'";
+            $sql .= " AND $key='$filter'";
           }
         }
       }
