@@ -35,7 +35,7 @@ class AD extends Base {
             LIMIT $page_start, $pagesize";
     $state = $DB->query($sql);
     if ($state) {
-      return $state->fetchAll(PDO::FETCH_ASSOC | PDO::FETCH_UNIQUE);
+      return $pagesize == 1 ? $state->fetch(PDO::FETCH_ASSOC) : $state->fetchAll(PDO::FETCH_ASSOC | PDO::FETCH_UNIQUE);
     } else {
       header('sql: ' . $sql);
       header('error: ' . json_encode($DB->errorInfo()));

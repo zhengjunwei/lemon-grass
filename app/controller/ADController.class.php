@@ -8,6 +8,7 @@
 
 use diy\service\AD;
 use diy\service\Apply;
+use diy\service\Mailer;
 use diy\service\User;
 use diy\utils\Utils;
 
@@ -268,8 +269,6 @@ class ADController extends BaseController {
     }
     $DB = $this->get_pdo_write();
     $CM = $this->get_cm();
-    require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
-    require dirname(__FILE__) . '/../../app/utils/array.php';
 
     $me = $_SESSION['id'];
     $now = date('Y-m-d H:i:s');
@@ -281,7 +280,7 @@ class ADController extends BaseController {
     // 拆分不同表的数据
     $callback = Utils::array_pick($attr, self::$FIELDS_CALLBACK);
     $channel = Utils::array_pick($attr, self::$FIELDS_CHANNEL);
-    $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, 'total_num');
+    $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL);
     $attr['id'] = $callback['ad_id'] = $channel['id'] = $id;
     $attr['status'] = 2; // 新建，待审核
     $attr['create_user'] = $channel['execute_owner'] = $me;
@@ -296,6 +295,7 @@ class ADController extends BaseController {
 
     //广告投放地理位置信息
     if ($attr['province_type'] == 1 && isset($attr['provinces'])) {
+      require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
       if (!is_array($attr['provinces'])) {
         $attr['provinces'] = array((int)$attr['provinces']);
       }
@@ -381,7 +381,7 @@ class ADController extends BaseController {
     ));
 
     // 给运营发邮件
-    $mail = new \diy\service\Mailer();
+    $mail = new Mailer();
     $subject = '商务[' . $_SESSION['fullname'] . ']创建新广告：' . $attr['channel'] . ' ' . $attr['ad_name'];
     $mail->send(OP_MAIL, $subject, $mail->create('ad-new', $attr));
 
@@ -411,13 +411,14 @@ class ADController extends BaseController {
    */
   public function update($id, $attr = null) {
     $DB = $this->get_pdo_write();
-    require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
 
     $attr = $attr ? $attr : $this->get_post_data();
+    $service = new AD();
+    $info = $service->get_ad_info(array('id' => $id), 0, 1);
 
-    // 需要发申请的修改
+    // 需要发申请的修改，只有未上线的需要申请
     $apply_change = array('job_num', 'today_left', 'ad_url');
-    if (array_intersect($apply_change, array_keys($attr))) {
+    if (array_intersect($apply_change, array_keys($attr)) && $info['status'] != 2) {
       return $this->send_apply($DB, $id, $attr);
     }
     if (array_key_exists('status', $attr) && $attr['status'] != -2) { // 修改状态，不是删除
@@ -428,7 +429,7 @@ class ADController extends BaseController {
     // 拆分不同表的数据
     $callback = Utils::array_pick($attr, self::$FIELDS_CALLBACK);
     $channel = Utils::array_pick($attr, self::$FIELDS_CHANNEL);
-    $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, 'total_num');
+    $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL);
 
     // 更新广告信息
     $check = SQLHelper::update($DB, self::$T_INFO, $attr, $id);
@@ -445,13 +446,14 @@ class ADController extends BaseController {
         'create_time' => date('Y-m-d H:i:s'),
       ));
 
-      $mail = new \diy\service\Mailer();
+      $mail = new Mailer();
       $mail->send(OP_MAIL, '广告备注修改', $mail->create('ad-modified', array(
         'id' => $id,
       )));
     }
 
     //广告投放地理位置信息
+    require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
     if (isset($attr['province_type'])) {
       admin_location::del_by_ad($DB, $id);
     }
@@ -604,7 +606,7 @@ class ADController extends BaseController {
 
     // 给运营发邮件
     $info = $replace_id ? $this->get_ad_info()->get_ad_info_by_id($DB, $replace_id) : null;
-    $mail = new \diy\service\Mailer();
+    $mail = new Mailer();
     $subject = $replace_id ? '替换成新广告' : '广告属性修改';
     $template = $replace_id ? 'apply-replace': 'apply-new';
     $mail->send(OP_MAIL, $subject, $mail->create($template, array_merge((array)$info, array(
@@ -620,7 +622,7 @@ class ADController extends BaseController {
     header('HTTP/1.1 201 Created');
     $this->output(array(
       'code' => 0,
-      'msg' => 'apply received',
+      'msg' => '申请已提交',
       'notice' => $notice_status ? '通知已发' : '通知失败',
       'ad' => $attr,
       'apply' => $apply,
@@ -695,6 +697,9 @@ class ADController extends BaseController {
       $attr['others'] = $attr['message'];
       unset($attr['message']);
     }
+
+    // 去掉不在表里的字段
+    unset($attr['job_num'], $attr['today_left'], $attr['total_num']);
 
     return $attr;
   }
