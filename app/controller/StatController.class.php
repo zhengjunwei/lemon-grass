@@ -9,7 +9,7 @@
 class StatController extends BaseController {
   public function get_ad_stat() {
     $DB = $this->get_pdo_read();
-    $me = 82;//$_SESSION['id'];
+    $me = $_SESSION['id'];
 
     $today = date('Y-m-d');
     $week = date('Y-m-d', time() - 604800);

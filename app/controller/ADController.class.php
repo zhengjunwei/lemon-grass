@@ -699,7 +699,7 @@ class ADController extends BaseController {
     }
 
     // 去掉不在表里的字段
-    unset($attr['job_num'], $attr['today_left'], $attr['total_num']);
+    unset($attr['today_left'], $attr['total_num']);
 
     return $attr;
   }
