@@ -16,13 +16,16 @@ require dirname(__FILE__) . '/../utils/array.php';
 class AD extends Base {
   /**
    * 取广告信息
+   *
    * @param array $filters
    * @param int $page_start
    * @param int $pagesize
    * @param string $order
+   * @param string $seq
+   *
    * @return array
    */
-  public function get_ad_info($filters, $page_start = 0, $pagesize = 10, $order = 'create_time') {
+  public function get_ad_info($filters, $page_start = 0, $pagesize = 10, $order = 'create_time', $seq = 'DESC') {
     $DB = $this->get_read_pdo();
     if (array_key_exists('id', $filters)) {
       $filters['a.id'] = $filters['id'];
@@ -35,7 +38,7 @@ class AD extends Base {
             FROM `t_adinfo` a LEFT JOIN `t_ad_source` b ON a.`id`=b.`id`
               LEFT JOIN `t_adinfo_rmb` r ON a.`id`=r.`id`
             WHERE $filter
-            ORDER BY `$order` DESC
+            ORDER BY `$order` $seq
             LIMIT $page_start, $pagesize";
     $state = $DB->query($sql);
     if ($state) {

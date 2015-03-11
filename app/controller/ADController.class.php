@@ -41,6 +41,8 @@ class ADController extends BaseController {
     $pagesize = isset($_REQUEST['pagesize']) ? (int)$_REQUEST['pagesize'] : 10;
     $page = isset($_REQUEST['page']) ? (int)$_REQUEST['page'] : 0;
     $page_start = $page * $pagesize;
+    $order = isset($_REQUEST['order']) ? trim($_REQUEST['order']) : 'create_time';
+    $seq = isset($_REQUEST['seq']) ? trim($_REQUEST['seq']) : 'DESC';
     $filters = array(
       'keyword' => $_REQUEST['keyword'],
       'pack_name' => $_REQUEST['pack_name'],
@@ -53,7 +55,7 @@ class ADController extends BaseController {
       $filters['ad_name'] = $_REQUEST['ad_name'];
     }
 
-    $res = $service->get_ad_info($filters, $page_start, $pagesize);
+    $res = $service->get_ad_info($filters, $page_start, $pagesize, $order, $seq);
     $total = $service->get_ad_number($filters);
     $ad_ids = array_keys(array_filter($res));
     $users = array();
