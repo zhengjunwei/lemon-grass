@@ -1,4 +1,7 @@
 <?php
+use diy\service\AD;
+use diy\service\Transfer;
+
 /**
  * Created by PhpStorm.
  * User: meathill
@@ -8,7 +11,6 @@
 
 class StatController extends BaseController {
   public function get_ad_stat() {
-    $DB = $this->get_pdo_read();
     $me = $_SESSION['id'];
 
     $today = date('Y-m-d');
@@ -19,46 +21,41 @@ class StatController extends BaseController {
     $page = (int)$_REQUEST['page'];
     $page_start = $page * $pagesize;
     $keyword = $_REQUEST['keyword'];
+    $channel = $_REQUEST['channel'];
+    $ad_name = $_REQUEST['ad_name'];
 
-    require_once(dirname(__FILE__) . '/../../dev_inc/admin_ad_info.class.php');
-    $adinfo = admin_ad_info::get_ad_info_by_owner($DB, $me, $start, $end, $keyword, $page_start, $pagesize);
-    $adids = implode("','", array_unique(array_keys($adinfo)));
-    $total = admin_ad_info::get_ad_number_by_owner($DB, $me, $start, $end, $keyword);
+    $filter = array(
+      'salesman' => $me,
+      'start' => $start,
+      'end' => $end,
+      'keyword' => $keyword,
+    );
+    if ($channel) {
+      $filter['channel'] = $channel;
+    }
+    if ($ad_name) {
+      $filter['ad_name'] = $ad_name;
+    }
+    $ad_service = new AD();
+    $ad_info = $ad_service->get_ad_info($filter, $page_start, $pagesize);
+    $total = $ad_service->get_ad_number($filter);
 
-    require_once(dirname(__FILE__) . '/../../dev_inc/transfer_stat.class.php');
-    $t = new transfer_stat(true);
-    $transfer_res = $t->get_ad_transfer_by_ads($DB, $start, $end, $adids);
+    $service = new Transfer();
+    $service->get_ad_transfer(array(
+      'start' => $start,
+      'end' => $end,
+      'ad_id' => array_unique(array_keys($ad_info)),
+    ), 'ad_id');
 
-    $DB = null;
-    $channels = array();
-    $ads = array();
     $ad_stat = array();
-    foreach ($adinfo as $key => $value) {
+    foreach ($ad_info as $id => $value) {
       if ($value['oversea'] == 1) {
         //本页面不显示海外广告的统计数据
         continue;
       }
-      $channel = $value['channel'];
-      if (in_array($channel, $channels)) {
-        $cid = array_search($channel, $channels);
-      } else {
-        $cid = count($channels);
-        $channels[] = $channel;
-      }
-      $ad_name = $value['ad_name'];
-      if (in_array($ad_name, $ads)) {
-        $aid = array_search($ad_name, $ads);
-      } else {
-        $aid = count($ads);
-        $ads[] = $ad_name;
-      }
       $ad = array_merge($value, array(
-        'id' => $key,
-        'channel' => $channel,
-        'cid' => $cid,
-        'ad_name' => $ad_name,
-        'aid' => $aid,
-        'device1' => isset($transfer_res[$key]) ? (int)$transfer_res[$key]['transfer'] : 0,
+        'id' => $id,
+        'device1' => isset($transfer_res[$id]) ? (int)$transfer_res[$id]['transfer'] : 0,
       ));
       $ad_stat[] = $ad;
     }

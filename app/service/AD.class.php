@@ -31,7 +31,7 @@ class AD extends Base {
     $filter = $this->parse_filter($filters);
     $sql = "SELECT a.`id`, `ad_name`, `create_time`, `status_time`, `quote_rmb`,
               `step_rmb`, `status`, `owner`, `execute_owner`, `channel`, `cid`,
-              `others`, `rmb`, `pack_name`
+              `others`, `rmb`, `pack_name`, `ad_app_type`
             FROM `t_adinfo` a LEFT JOIN `t_ad_source` b ON a.`id`=b.`id`
               LEFT JOIN `t_adinfo_rmb` r ON a.`id`=r.`id`
             WHERE $filter

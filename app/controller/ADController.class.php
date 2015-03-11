@@ -9,6 +9,7 @@
 use diy\service\AD;
 use diy\service\Apply;
 use diy\service\Mailer;
+use diy\service\Transfer;
 use diy\service\User;
 use diy\utils\Utils;
 
@@ -45,6 +46,12 @@ class ADController extends BaseController {
       'pack_name' => $_REQUEST['pack_name'],
       'salesman' => $me,
     );
+    if (isset($_REQUEST['channel'])) {
+      $filters['channel'] = $_REQUEST['channel'];
+    }
+    if (isset($_REQUEST['ad_name'])) {
+      $filters['ad_name'] = $_REQUEST['ad_name'];
+    }
 
     $res = $service->get_ad_info($filters, $page_start, $pagesize);
     $total = $service->get_ad_number($filters);
@@ -53,8 +60,6 @@ class ADController extends BaseController {
     foreach ( $res as $value ) {
       $users[] = $value['execute_owner'];
     }
-    // 取总投放量
-    $rmb_out = $service->get_rmb_out_by_ad($ad_ids);
 
     // 取商务名单
     $user_service = new User();
@@ -84,25 +89,8 @@ class ADController extends BaseController {
 
     $ad_jobs = $service->get_all_ad_job();
 
-    $channels = array();
-    $ads = array();
     $result = array();
     foreach ($res as $id => $value) {
-      $ad_name = $value['ad_name'];
-      $channel = $value['channel'];
-      if (in_array($channel, $channels)) {
-        $cid = array_search($channel, $channels);
-      } else {
-        $cid = count($channels);
-        $channels[] = $channel;
-      }
-      if (in_array($ad_name, $ads)) {
-        $aid = array_search($ad_name, $ads);
-      } else {
-        $aid = count($ads);
-        $ads[] = $ad_name;
-      }
-
       $apply = array();
       if (is_array($applies_by_ad[$id])) {
         foreach ( $applies_by_ad[$id] as $item ) {
@@ -118,15 +106,11 @@ class ADController extends BaseController {
 
       $result[] = array_merge($value, $apply, array(
         'id' => $id,
-        'channel_id' => $cid,
-        'aid' => $aid,
         'execute_owner' => $users[$value['execute_owner']],
-        'packname' => str_replace('.', '-', $value['pack_name']),
-        'class' => $value['ad_app_type'] == 1 ? 'Android' : 'iPhone',
+        'pack_name' => str_replace('.', '-', $value['pack_name']),
         'today_left' => $value['step_rmb'] != 0 ? (int)($value['rmb'] / $value['step_rmb']) : 0,
         'job_num' => (int)$ad_jobs[$id]['jobnum'],
         'job_time' => date("H:i", strtotime($ad_jobs[$id]['jobtime'])),
-        'has_transfer' => $rmb_out[$id] > 0,
         'is_ready' => $value['status'] == 1 || $value['status'] == 0,
       ));
     }

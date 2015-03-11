@@ -17,7 +17,7 @@ class User extends Base {
     $filter_sql = $this->parse_filter($filters, true);
     $sql = "SELECT `id`, `NAME`
             FROM `t_admin`
-            WHERE `status`=0 $filter_sql";
+            WHERE `status`=1 $filter_sql";
     return $DB->query($sql)->fetchAll(PDO::FETCH_KEY_PAIR);
   }
 }
