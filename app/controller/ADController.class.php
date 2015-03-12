@@ -583,15 +583,15 @@ class ADController extends BaseController {
     // 给运营发通知
     $notice = new Notification();
     $notice_status = $notice->send(array(
-      'ad_id' => $replace_id ? $replace_id : $id,
+      'ad_id' => $id,
       'uid' => $apply['id'],
       'alarm_type' => $replace_id ? Notification::$REPLACE_AD : Notification::$EDIT_AD,
       'create_time' => $now,
-      'app_id' => $replace_id ? $id : '', // 用appid字段保存被替换的广告id
+      'app_id' => $replace_id, // 用appid字段保存被替换的广告id
     ));
 
     // 给运营发邮件
-    $info = $replace_id ? $this->get_ad_info()->get_ad_info_by_id($DB, $replace_id) : null;
+    $info = $replace_id ? $this->get_ad_info()->get_ad_info_by_id($DB, $id) : null;
     $mail = new Mailer();
     $subject = $replace_id ? '替换成新广告' : '广告属性修改';
     $template = $replace_id ? 'apply-replace': 'apply-new';
