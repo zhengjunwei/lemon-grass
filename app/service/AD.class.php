@@ -80,8 +80,8 @@ class AD extends Base {
     $sql = "SELECT `ad_name`, `ad_app_type`, `pic_path`, `ad_desc`,
               `cpc_cpa`, `ad_shoot`, `cate`, `ad_type`
             FROM `t_adinfo`
-            WHERE `pack_name`=:pack_name
-            ORDER BY `create_time` DESC
+            WHERE `pack_name`=:pack_name AND `status`>=0
+            ORDER BY `status`ASC, `create_time` DESC
             LIMIT 1";
     $state = $DB->prepare($sql);
     $state->execute(array(':pack_name' => $pack_name));

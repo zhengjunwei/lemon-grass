@@ -109,6 +109,10 @@ class FileController extends BaseController {
       }
     }
 
+    // 记录到log里
+    $service = new FileLog();
+    $service->insert_fetch_log($id, $type, $path, $file);
+
     if (preg_match('/\.apk$/', $path)) {
       $package = $this->parse_apk($path, $type);
       $result = array_merge($result, $package);
