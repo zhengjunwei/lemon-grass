@@ -94,13 +94,15 @@ class FileController extends BaseController {
       'id' => $id,
     );
     // 已经在我们的机器上了，直接分析
+    $path = '';
     if (preg_match(LOCAL_FILE, $file)) {
       $result['msg'] = 'exist';
       $path = preg_replace(LOCAL_FILE, UPLOAD_BASE, $file);
     } else {
-      $path = $this->get_file_path($type, $file, $id);
       try {
         $content = file_get_contents($file);
+        $filename = $this->parse_filename($file, $http_response_header);
+        $path = $this->get_file_path($type, $filename, $id);
         file_put_contents($path, $content);
         // 生成反馈
         $result['msg'] = 'fetched';
@@ -111,7 +113,7 @@ class FileController extends BaseController {
 
     // 记录到log里
     $service = new FileLog();
-    $service->insert_fetch_log($id, $type, $path, $file);
+    $service->insert_fetch_log($id, $type, $path, $file, $filename);
 
     if (preg_match('/\.apk$/', $path)) {
       $package = $this->parse_apk($path, $type);
@@ -270,5 +272,46 @@ class FileController extends BaseController {
    */
   private function create_id() {
     return md5(uniqid());
+  }
+
+  /**
+   * 从一串HTTP响应头里分析文件名称
+   *
+   * @param $url
+   * @param $http_response_header
+   */
+  private function parse_filename( $url, $http_response_header ) {
+    $http_reg = '/^HTTP\/\d\.\d (\d)\d{2}/';
+    $location_reg = '/^Location: (\S+)/';
+    $content_reg = '/^Content-Disposition: \w+; filename="(\S)+"/';
+    $is_rewrite = $is_final = false;
+    foreach ( $http_response_header as $response ) {
+      $matches = array();
+
+      // 这行是状态码？
+      $is_status = preg_match($http_reg, $response, $matches);
+      if ($is_status) {
+        if ($matches[1] == '3') { // 跳转
+          $is_rewrite = true;
+        } elseif ($matches[1] == '2') { // 最终
+          $is_final = true;
+        }
+        continue;
+      }
+
+      // 还是跳转后的url？
+      $is_location = preg_match($location_reg, $response, $matches);
+      if ($is_location) {
+        $url = $matches[1];
+        continue;
+      }
+
+      // 或者是包含文件名的什么东西？
+      $is_disposition = preg_match($content_reg, $response, $matches);
+      if ($is_disposition) {
+        $url = $matches[1];
+      }
+    }
+    return $url;
   }
 }

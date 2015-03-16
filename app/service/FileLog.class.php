@@ -31,19 +31,21 @@ class FileLog extends Base {
     return $state->fetchColumn();
   }
 
-  public function insert_fetch_log( $id, $type, $path, $file ) {
+  public function insert_fetch_log( $id, $type, $path, $file, $final ) {
     $DB = $this->get_write_pdo();
     $now = date('Y-m-d H:i:s');
     $fetch_user = (int)$_SESSION['id'];
     $sql = "INSERT INTO `t_fetch_log`
-            (`id`, `type`, `url`, `fetch_user`, `fetch_time`, `from`)
-            VALUE (:id, :type, :url, $fetch_user, '$now', :from)";
+            (`id`, `file_type`, `url`, `fetch_user`, `fetch_time`, `fetch_from`,
+              `final_url`)
+            VALUE (:id, :type, :url, $fetch_user, '$now', :from, :final)";
     $state = $DB->prepare($sql);
     return $state->execute(array(
       ':id' => $id,
       ':type' => $type,
       ':url' => $path,
       ':from' => $file,
+      ':final' => $final,
     ));
   }
 }
