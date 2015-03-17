@@ -6,7 +6,13 @@
  * Time: 上午10:59
  */
 
-class Notification extends \diy\service\Base {
+namespace diy\service;
+
+use Mustache_Engine;
+use PDO;
+use SQLHelper;
+
+class Notification extends Base {
   const LOG = 't_admin_alarm_log';
 
   static $NEW_AD = 20;
@@ -26,10 +32,9 @@ class Notification extends \diy\service\Base {
   }
 
   public function get_notice($admin_id, $role, $latest) {
-    require dirname(__FILE__) . '/../../dev_inc/admin_ad_info.class.php';
-    $ad_info = new admin_ad_info();
     $DB = $this->get_read_pdo();
     $m = new Mustache_Engine();
+    $ad_service = new AD();
 
     $sql = "SELECT `type`
             FROM `t_alarm_group`
@@ -51,7 +56,7 @@ class Notification extends \diy\service\Base {
       $alarm['id'] = (int)$alarm['id'];
       if ($alarm['ad_id']) {
         if (strlen($alarm['ad_id']) == 32) {
-          $ad = $ad_info->get_ad_info_by_id($DB, $alarm['ad_id']);
+          $ad = $ad_service->get_ad_info(array('id' => $alarm['ad_id']), 0, 1);
           $alarm['name'] = $ad['ad_name'];
         }
       }
@@ -60,6 +65,16 @@ class Notification extends \diy\service\Base {
     }
 
     return $alarms;
+  }
+
+  public function get_notice_by_uid($uid) {
+    $DB = $this->get_read_pdo();
+    $sql = "SELECT `id`
+            FROM `t_admin_alarm_log`
+            WHERE `uid`=:uid";
+    $state = $DB->prepare($sql);
+    $state->execute(array(':uid' => $uid));
+    return $state->fetchColumn();
   }
 
   public function set_status( $id, $HANDLED ) {

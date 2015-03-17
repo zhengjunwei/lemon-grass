@@ -30,44 +30,64 @@ class ApplyController extends BaseController {
 
     $service = $this->get_service();
     $applies = $service->get_list($me, $keyword, $start, $pagesize);
-    $keys = array('status', 'job_num', 'rmb', 'ad_url');
     $labels = array(
-      'status' => '上下线',
-      'job_num' => '每日限量',
-      'rmb' => '今日余量',
-      'ad_url' => '替换包',
+      'set_status' => '上/下线',
+      'set_job_num' => '每日限量',
+      'set_rmb' => '今日余量',
+      'set_ad_url' => '替换包',
+      'set_quote_rmb' => '报价',
     );
-    $today = mktime(0, 0, 0);
+    $today = date('Y-m-d');
     $expires = array();
     $handler = array();
 
     foreach ( $applies as $index => $apply ) {
-      foreach ( $keys as $key ) {
-        $s_key = 'set_' . $key;
-        if (isset($apply[$s_key])) {
-          $apply['attr'] = $labels[$key];
-          $apply['after'] = $apply[$s_key];
-          if (!$apply['handler']) { // 尚未处理，取之前的值
-            $apply['before'] = $service->get_ad_attr($apply['adid'], $key);
+      $apply = array_filter($apply, function ($value) {
+        return isset($value);
+      });
+      // 修改每日限额同时修改今日余量
+      if (array_key_exists('set_rmb', $apply) && array_key_exists('set_job_num', $apply)) {
+        $apply['attr'] = 'set_job_num';
+        $apply['label'] = $labels['set_job_num'];
+        $apply['after'] = $apply['set_job_num'];
+        $apply['extra'] = true;
+      } else {
+        // 普通处理
+        foreach ($apply as $key => $value ) {
+          if (preg_match('/^set_\w+/', $key)) {
+            $apply['attr'] = $key;
+            $apply['label'] = $labels[$key];
+            $apply['after'] = $value;
+            break;
           }
-          if ($key == 'rmb') {
-            // 如果是今日之前的申请，自动作废
-            if (strtotime($apply['create_time']) < $today) {
-              $expires[] = $apply['id'];
-              unset($applies[$index]);
-              break;
-            }
-            $step_rmb = $service->get_ad_attr($apply['adid'], 'step_rmb');
-            $apply['after'] = $apply['after'] / $step_rmb;
-            $apply['before'] = $apply['before'] / $step_rmb;
-          }
-          $apply['is_url'] = $key == 'ad_url';
-          $apply['is_status'] = $key == 'status';
-          $applies[$index] = $apply;
-          break;
         }
       }
+
       $handler[] = $apply['handler'];
+
+      if (!$apply['handler'] && $apply['attr']) { // 尚未处理，取之前的值
+        $apply['before'] = $service->get_ad_attr($apply['adid'], $key);
+      }
+      if ($apply['attr'] == 'set_rmb') {
+        if ($apply['create_time'] < $today) {
+          $expires[] = $apply['id'];
+          unset($applies[$index]);
+          break;
+        }
+        $step_rmb = $service->get_ad_attr($apply['adid'], 'step_rmb');
+        $apply['after'] = $apply['after'] / $step_rmb;
+        $apply['before'] = $apply['before'] / $step_rmb;
+      }
+      $apply['is_url'] = $apply['attr'] == 'set_ad_url';
+      $apply['is_status'] = $apply['attr'] == 'set_status';
+      // 没有匹配的值对，则是替换广告
+      if (!$apply['attr'] && !$apply['value']) {
+        $apply['label'] = '替换广告';
+        $apply['after'] = $apply['adid'];
+        $apply['is_replace'] = true;
+      }
+
+      $applies[$index] = $apply;
     }
 
     // 作废申请
