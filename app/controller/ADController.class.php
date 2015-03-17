@@ -9,7 +9,7 @@
 use diy\service\AD;
 use diy\service\Apply;
 use diy\service\Mailer;
-use diy\service\Transfer;
+use diy\service\Notification;
 use diy\service\User;
 use diy\utils\Utils;
 
@@ -403,7 +403,7 @@ class ADController extends BaseController {
     $info = $service->get_ad_info(array('id' => $id), 0, 1);
 
     // 需要发申请的修改，只有未上线的需要申请
-    $apply_change = array('job_num', 'today_left', 'ad_url');
+    $apply_change = array('job_num', 'today_left', 'ad_url', 'quote_rmb');
     if (array_intersect($apply_change, array_keys($attr)) && $info['status'] != 2) {
       return $this->send_apply($DB, $id, $attr);
     }
@@ -563,6 +563,11 @@ class ADController extends BaseController {
       $key = 'set_ad_url';
       $value = str_replace(UPLOAD_URL, '', $changed['ad_url']);
       $label = '替换包';
+    }
+    if (isset($changed['quote_rmb'])) {
+      $key = 'set_quote_rmb';
+      $value = $changed['quote_rmb'];
+      $label = '报价';
     }
 
     // 对同一属性的修改不能同时有多个
