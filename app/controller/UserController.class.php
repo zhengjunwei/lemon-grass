@@ -16,12 +16,7 @@ class UserController extends BaseController {
       $result = array(
         'code' => 0,
         'msg' => 'is login',
-        'me' => array(
-          'id' => $_SESSION['id'],
-          'user' => $_SESSION['user'],
-          'fullname' => $_SESSION['fullname'],
-          'role' => $_SESSION['role'],
-        ),
+        'me' => $this->get_user_info(),
       );
       $this->output($result);
     }
@@ -42,28 +37,19 @@ class UserController extends BaseController {
     }
 
     $service = new Auth();
-    $admin = $service->validate($username, $password);
-    if (!$admin) {
+    $pass = $service->validate($username, $password);
+    if (!$pass) {
       $this->exit_with_error(3, '用户名或密码错误', 400);
     }
     // 只向技术和商务开放
-    if (!in_array((int)$admin['permission'], array(0, 1, 5, 6))) {
+    if (!$service->has_permission()) {
       $this->exit_with_error(4, '暂时只向商务开放', 400);
     }
-    session_start();
-    $_SESSION['user'] = $username;
-    $_SESSION['id'] = $admin['id'];
-    $_SESSION['role'] = $admin['permission'];
-    $_SESSION['fullname'] = $admin['NAME'];
+
     $result = array(
       'code' => 0,
       'msg' => '登录成功',
-      'me' => array(
-        'id' => $_SESSION['id'],
-        'user' => $_SESSION['user'],
-        'fullname' => $_SESSION['fullname'],
-        'role' => $_SESSION['role'],
-      ),
+      'me' => $this->get_user_info(),
     );
     $this->output($result);
   }
@@ -74,5 +60,27 @@ class UserController extends BaseController {
       'code' => 0,
       'msg' => 'logout',
     ));
+  }
+
+  /**
+   * 取存在sesssion里的用户数据
+   *
+   * @return array
+   */
+  private function get_user_info() {
+    return $_SESSION['permission'] == Auth::$CP_PERMISSION ? array(
+      'id' => $_SESSION['id'],
+      'email' => $_SESSION['email'],
+      'role' => $_SESSION['role'],
+      'fullname' => $_SESSION['fullname'],
+      'balance' => $_SESSION['balance'],
+      'last_login' => $_SESSION['last_login'],
+      'sidebar' => 'cp',
+    ) : array(
+      'id'       => $_SESSION['id'],
+      'user'     => $_SESSION['user'],
+      'fullname' => $_SESSION['fullname'],
+      'role'     => $_SESSION['role'],
+    );
   }
 } 

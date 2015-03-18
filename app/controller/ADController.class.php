@@ -8,6 +8,7 @@
 
 use diy\service\AD;
 use diy\service\Apply;
+use diy\service\Auth;
 use diy\service\Mailer;
 use diy\service\Notification;
 use diy\service\User;
@@ -146,22 +147,28 @@ class ADController extends BaseController {
       'ad_type' => 0,
       'cate' => 1,
       'cpc_cpa' => 'cpa',
-      'ratio' => 1,
       'put_level' => 3,
       'imsi' => 0,
       'put_net' => 0,
       'net_type' => 0,
       'put_jb' => 0,
       'put_ipad' => 0,
-      'feedback' => 0,
-      'cycle' => 0,
       'salt' => substr(md5(time()), 0, 8),
       'url_type'=>'',
       'province_type' => 0,
       'share_text'=>'',
       'down_type' => 0,
-      'owner' => $me,
     );
+    if ($_SESSION['role'] == Auth::$CP_PERMISSION) {
+      $init['cp'] = true;
+    } else {
+      $init = array_merge($init, array(
+        'ratio' => 1,
+        'feedback' => 0,
+        'cycle' => 0,
+        'owner' => $me,
+      ));
+    }
     $options = array(
       'cates' => array(),
       'net_types' => $CM->all_net_types,
@@ -187,7 +194,6 @@ class ADController extends BaseController {
         'value' => $value,
       );
     }
-
 
     if ($id === 'init') {
       $this->output(array(
@@ -271,8 +277,11 @@ class ADController extends BaseController {
     $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, self::$FILEDS_IOS);
     $attr['id'] = $callback['ad_id'] = $channel['id'] = $id;
     $attr['status'] = 2; // 新建，待审核
-    $attr['create_user'] = $channel['execute_owner'] = $me;
+    $attr['create_user'] = $me;
     $attr['create_time'] = $now;
+    if ($_SESSION['role'] == Auth::$CP_PERMISSION) {
+      $channel['execute_owner'] = $me;
+    }
     $replace_id = '';
     if ($attr['replace']) {
       $replace_id = $attr['replace-with'];
@@ -698,7 +707,6 @@ class ADController extends BaseController {
     if ($attr['feedback']) {
       $attr['open_url_type'] = $attr['feedback'] == 4 ? 0 : 1;
     }
-    // TODO 将来考虑建一个专门的通知表，存储不需要运营操作，但他们应该知悉的内容
     if (isset($attr['message'])) {
       $attr['others'] = $attr['message'];
       unset($attr['message']);

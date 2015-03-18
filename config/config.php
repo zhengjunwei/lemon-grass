@@ -15,3 +15,4 @@ define('OP_MAIL', 'op@dianjoy.com'); // 运营的公用邮箱
 define('MAIL_PASSWORD', '123456'); // 通知邮箱的登录密码
 define('LOCAL_FILE', '~http://ad\-diy\.com/~');
 define('ALLOW_ORIGIN', 'http://localhost:63300,http://diyt.dianjoy.com');
+define('SALT', '');
