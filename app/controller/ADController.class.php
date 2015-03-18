@@ -20,7 +20,8 @@ class ADController extends BaseController {
   static $T_INFO = 't_adinfo';
   static $T_RMB = 't_adinfo_rmb';
   public static $T_APPLY = 't_diy_apply';
-  static $FIELDS_CALLBACK = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type', 'open_url_type');
+  static $FIELDS_CALLBACK = array('salt', 'click_url', 'ip', 'corp');
+  static $FILEDS_IOS = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type', 'open_url_type', 'search_flag', 'keywords', 'aso_middle_page', 'rank');
   static $FIELDS_CHANNEL = array('channel', 'owner', 'cid', 'url', 'user', 'pwd', 'feedback', 'cycle');
   static $FIELDS_APPLY = array('status', 'today_left', 'job_num');
 
@@ -265,6 +266,7 @@ class ADController extends BaseController {
 
     // 拆分不同表的数据
     $callback = Utils::array_pick($attr, self::$FIELDS_CALLBACK);
+    $ios = Utils::array_pick($attr, self::$FILEDS_IOS);
     $channel = Utils::array_pick($attr, self::$FIELDS_CHANNEL);
     $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL);
     $attr['id'] = $callback['ad_id'] = $channel['id'] = $id;
@@ -331,7 +333,7 @@ class ADController extends BaseController {
     }
     // 记录平台专属数据
     if ($attr['ad_app_type'] == 2) {
-      $check = SQLHelper::insert($DB, self::$T_IOS_INFO, $callback);
+      $check = SQLHelper::insert($DB, self::$T_IOS_INFO, $ios);
       if (!$check) {
         $this->exit_with_error(22, '插入iOS专属数据失败', 400, SQLHelper::$info);
       }
@@ -413,14 +415,27 @@ class ADController extends BaseController {
 
     $attr = $this->validate($attr, $id);
     // 拆分不同表的数据
+    $ios = Utils::array_pick($attr, self::$FILEDS_IOS);
     $callback = Utils::array_pick($attr, self::$FIELDS_CALLBACK);
     $channel = Utils::array_pick($attr, self::$FIELDS_CHANNEL);
     $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL);
 
     // 更新广告信息
-    $check = SQLHelper::update($DB, self::$T_INFO, $attr, $id);
+    $check = false;
+    if ($attr) {
+      $check = SQLHelper::update($DB, self::$T_INFO, $attr, $id);
+    }
+    if ($channel) {
+      $check = SQLHelper::update($DB, self::$T_SOURCE, $channel, $id);
+    }
+    if ($ios) {
+      $check = SQLHelper::update($DB, self::$T_IOS_INFO, $ios, $id);
+    }
+    if ($callback) {
+      $check = SQLHelper::update($DB, self::$FIELDS_CALLBACK, $callback, $id);
+    }
     if (!$check) {
-      $this->exit_with_error(30, '修改广告失败', 400);
+      $this->exit_with_error(30, '修改广告失败', 400, SQLHelper::$info);
     }
 
     $notice_status = false;
