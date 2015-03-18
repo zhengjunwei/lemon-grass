@@ -6,6 +6,8 @@
  * Time: 下午3:40
  */
 
+use diy\service\Notification;
+
 class NoticeController extends BaseController {
   private function get_service() {
     return new Notification();
