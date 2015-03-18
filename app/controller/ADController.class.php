@@ -268,7 +268,7 @@ class ADController extends BaseController {
     $callback = Utils::array_pick($attr, self::$FIELDS_CALLBACK);
     $ios = Utils::array_pick($attr, self::$FILEDS_IOS);
     $channel = Utils::array_pick($attr, self::$FIELDS_CHANNEL);
-    $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL);
+    $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, self::$FILEDS_IOS);
     $attr['id'] = $callback['ad_id'] = $channel['id'] = $id;
     $attr['status'] = 2; // 新建，待审核
     $attr['create_user'] = $channel['execute_owner'] = $me;
@@ -418,7 +418,7 @@ class ADController extends BaseController {
     $ios = Utils::array_pick($attr, self::$FILEDS_IOS);
     $callback = Utils::array_pick($attr, self::$FIELDS_CALLBACK);
     $channel = Utils::array_pick($attr, self::$FIELDS_CHANNEL);
-    $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL);
+    $attr = Utils::array_omit($attr, self::$FIELDS_CALLBACK, self::$FIELDS_CHANNEL, self::$FILEDS_IOS);
 
     // 更新广告信息
     $check = false;
