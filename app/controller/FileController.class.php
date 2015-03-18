@@ -94,7 +94,7 @@ class FileController extends BaseController {
       'id' => $id,
     );
     // 已经在我们的机器上了，直接分析
-    $path = '';
+    $path = $filename = '';
     if (preg_match(LOCAL_FILE, $file)) {
       $result['msg'] = 'exist';
       $path = preg_replace(LOCAL_FILE, UPLOAD_BASE, $file);
@@ -282,7 +282,7 @@ class FileController extends BaseController {
    */
   private function parse_filename( $url, $http_response_header ) {
     $http_reg = '/^HTTP\/\d\.\d (\d)\d{2}/';
-    $location_reg = '/^Location: (\S+)/';
+    $location_reg = '/^Location: (\S+)/i';
     $content_reg = '/^Content-Disposition: \w+; filename="(\S)+"/';
     $is_rewrite = $is_final = false;
     foreach ( $http_response_header as $response ) {
