@@ -17,7 +17,7 @@ class Auth extends Base {
 
   public function validate($username, $password) {
     if (preg_match('/[\w\d\.\-]+@[\w\d\-]+\.\w{2,4}/i', $username)) {
-      $this->validate_cp($username, $password);
+      return $this->validate_cp($username, $password);
     }
     $password = $this->encrypt( $username, $password );
     $pdo = $this->get_read_pdo();
@@ -62,10 +62,6 @@ class Auth extends Base {
       ':password' => $password,
     ));
     $this->user = $user = $state->fetch(PDO::FETCH_ASSOC);
-
-    if (!$this->has_permission()) {
-      return !!$user;
-    }
 
     // 记录到session
     session_start();
