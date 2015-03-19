@@ -126,7 +126,7 @@ class AD extends Base {
     $pick = Utils::array_pick($filters, $spec);
     $filters = Utils::array_omit($filters, $spec);
     if (!array_key_exists('status', $filters)) {
-      $filters['status'] = array(0, 1, 2); // 上线，下线，申请
+      $filters['status'] = array(0, 1, 2, 3, 4); // 上线，下线，申请，替换，被据
     }
     $result = parent::parse_filter($filters, $is_append);
     foreach ($pick as $key => $value) {

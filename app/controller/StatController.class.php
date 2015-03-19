@@ -1,7 +1,4 @@
 <?php
-use diy\service\AD;
-use diy\service\Transfer;
-
 /**
  * Created by PhpStorm.
  * User: meathill
@@ -9,9 +6,14 @@ use diy\service\Transfer;
  * Time: 下午12:40
  */
 
+use diy\service\AD;
+use diy\service\Auth;
+use diy\service\Transfer;
+
 class StatController extends BaseController {
   public function get_ad_stat() {
     $me = $_SESSION['id'];
+    $im_cp = $_SESSION['role'] == Auth::$CP_PERMISSION;
 
     $today = date('Y-m-d');
     $week = date('Y-m-d', time() - 604800);
@@ -25,7 +27,7 @@ class StatController extends BaseController {
     $ad_name = $_REQUEST['ad_name'];
 
     $filter = array(
-      'salesman' => $me,
+      ($im_cp ? 'create_user' : 'salesman') => $me,
       'start' => $start,
       'end' => $end,
       'keyword' => $keyword,

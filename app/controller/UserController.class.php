@@ -68,7 +68,7 @@ class UserController extends BaseController {
    * @return array
    */
   private function get_user_info() {
-    return $_SESSION['permission'] == Auth::$CP_PERMISSION ? array(
+    return $_SESSION['role'] == Auth::$CP_PERMISSION ? array(
       'id' => $_SESSION['id'],
       'email' => $_SESSION['email'],
       'role' => $_SESSION['role'],

@@ -7,8 +7,10 @@
  */
 
 use diy\service\AD;
+use diy\service\ADOperationLogger;
 use diy\service\Apply;
 use diy\service\Auth;
+use diy\service\Location;
 use diy\service\Mailer;
 use diy\service\Notification;
 use diy\service\User;
@@ -22,7 +24,7 @@ class ADController extends BaseController {
   static $T_RMB = 't_adinfo_rmb';
   public static $T_APPLY = 't_diy_apply';
   static $FIELDS_CALLBACK = array('salt', 'click_url', 'ip', 'corp');
-  static $FILEDS_IOS = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type', 'open_url_type', 'search_flag', 'keywords', 'aso_middle_page', 'rank');
+  static $FILEDS_IOS = array('put_jb', 'put_ipad', 'salt', 'click_url', 'ip', 'url_type', 'corp', 'http_param', 'process_name', 'down_type', 'open_url_type', 'search_flag', 'keywords', 'url_scheme', 'aso_middle_page', 'rank');
   static $FIELDS_CHANNEL = array('channel', 'owner', 'cid', 'url', 'user', 'pwd', 'feedback', 'cycle');
   static $FIELDS_APPLY = array('status', 'today_left', 'job_num');
 
@@ -205,7 +207,6 @@ class ADController extends BaseController {
       ));
     }
 
-    require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
     // 广告内容
     $res = $ad_info->get_ad_info_by_id($DB, $id);
     $ad_shoot = preg_replace('/^,|,$/', '', $res['ad_shoot']);
@@ -219,12 +220,10 @@ class ADController extends BaseController {
     $res['ad_url'] = $this->createCompletePath($res['ad_url']);
     $res['pic_path'] = $this->createCompletePath($res['pic_path']);
 
-    // 上传文件记录
-    $upload_log = $ad_info->select_upload_log($DB, $id);
-
     // 省份
     if ($res['province_type'] == 1) {
-      $provinces = admin_location::get_provinces_by_ad($DB, $id);
+      $location = new Location();
+      $provinces = $location->get_provinces_by_ad($DB, $id);
       $put_provinces = array();
       foreach ( $options['provinces'] as $key => $province ) {
         if (in_array($province['key'], $provinces)) {
@@ -236,6 +235,13 @@ class ADController extends BaseController {
         }
       }
       $res['put_provinces'] = $put_provinces;
+    }
+
+    // 被据广告读原因
+    if ($res['status'] == 4) {
+      $op_log = new ADOperationLogger();
+      $log = $op_log->get_log(array('adid' => $id, 'type' => 'ad', 'action' => 'decline'));
+      $res['decline'] = $log;
     }
 
     $options = array_merge($options, array(
@@ -294,12 +300,12 @@ class ADController extends BaseController {
 
     //广告投放地理位置信息
     if ($attr['province_type'] == 1 && isset($attr['provinces'])) {
-      require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
+      $location = new Location();
       if (!is_array($attr['provinces'])) {
         $attr['provinces'] = array((int)$attr['provinces']);
       }
       if (count($attr['provinces'])) {
-        $check = admin_location::insert_ad_province($DB, $id, $attr['provinces']);
+        $check = $location->insert_ad_province($DB, $id, $attr['provinces']);
         if (!$check) {
           $this->exit_with_error(21, '插入投放地理位置失败', 400);
         }
@@ -465,16 +471,16 @@ class ADController extends BaseController {
     }
 
     //广告投放地理位置信息
-    require dirname(__FILE__) . '/../../dev_inc/admin_location.class.php';
+    $location = new Location();
     if (isset($attr['province_type'])) {
-      admin_location::del_by_ad($DB, $id);
+      $location->del_by_ad($DB, $id);
     }
     if ($attr['province_type'] == 1 && isset($attr['provinces'])) {
       if (!is_array($attr['provinces'])) {
         $attr['provinces'] = array($attr['provinces']);
       }
       if (count($attr['provinces'])) {
-        $check = admin_location::insert_ad_province($DB, $id, $attr['provinces']);
+        $check = $location->insert_ad_province($DB, $id, $attr['provinces']);
         if (!$check) {
           $this->exit_with_error(31, '修改投放地理位置失败', 400);
         }

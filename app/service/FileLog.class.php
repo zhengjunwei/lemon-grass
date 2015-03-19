@@ -2,6 +2,8 @@
 
 namespace diy\service;
 
+use PDO;
+
 class FileLog extends Base {
   public function insert($id, $type, $path, $file_name) {
     $DB = $this->get_write_pdo();
@@ -47,5 +49,16 @@ class FileLog extends Base {
       ':from' => $file,
       ':final' => $final,
     ));
+  }
+
+  public function select_upload_log( $ad_id ) {
+    $DB = $this->get_read_pdo();
+    $sql = "SELECT *
+            FROM `t_upload_log`
+            WHERE `id`=:id AND `TYPE`='ad_url'
+            ORDER BY `upload_time` DESC";
+    $state = $DB->prepare($sql);
+    $state->execute(array(':id' => $ad_id));
+    return $state->fetchAll(PDO::FETCH_ASSOC);
   }
 }

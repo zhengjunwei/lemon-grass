@@ -5,7 +5,8 @@
     "mustache/mustache": "~2.7",
     "noahbuscher/macaw": "dev-master",
     "phpmailer/phpmailer": "~5.2",
-    "tufanbarisyildirim/php-apk-parser": "dev-master"
+    "tufanbarisyildirim/php-apk-parser": "dev-master",
+    "rodneyrehm/plist": "dev-master"
   },
   "license": "MIT",
   "version": "0.1.0",
