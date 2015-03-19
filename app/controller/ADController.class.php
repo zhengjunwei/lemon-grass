@@ -702,10 +702,9 @@ class ADController extends BaseController {
       $attr['seq_rmb'] = $attr['seq_rmb'] == '' ? (int)$attr['step_rmb'] : (int)$attr['seq_rmb'];
     }
     if (!$id) {
-      $attr['create_time'] = date('Y-m-d H:i:s');
-    }
-    if ($attr['feedback']) {
-      $attr['open_url_type'] = $attr['feedback'] == 4 ? 0 : 1;
+      if ($attr['feedback']) {
+        $attr['open_url_type'] = $attr['feedback'] == 4 ? 0 : 1;
+      }
     }
     if (isset($attr['message'])) {
       $attr['others'] = $attr['message'];

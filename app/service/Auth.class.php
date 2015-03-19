@@ -42,7 +42,7 @@ class Auth extends Base {
   }
 
   public function has_permission() {
-    return !in_array((int)$this->user['permission'], array(0, 1, 5, 6));
+    return in_array((int)$this->user['permission'], array(0, 1, 5, 6));
   }
 
   private function validate_cp( $email, $password ) {
