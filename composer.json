@@ -19,6 +19,7 @@
   "autoload": {
     "classmap": [
       "app/controller",
+      "app/model",
       "app/service",
       "app/helper"
     ]

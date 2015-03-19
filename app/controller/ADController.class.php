@@ -6,6 +6,7 @@
  * Time: 下午2:01
  */
 
+use diy\model\ADModel;
 use diy\service\AD;
 use diy\service\ADOperationLogger;
 use diy\service\Apply;
@@ -430,6 +431,26 @@ class ADController extends BaseController {
       return $this->send_apply($DB, $id, $attr);
     }
 
+    // 二次申请上线
+    if ($info['status'] == ADModel::REJECTED && $attr['status'] == ADModel::ONLINE) {
+      SQLHelper::update($DB, self::$T_INFO, array('status' => 2), $id);
+      $notice = new Notification();
+      $notice->send(array(
+        'ad_id' => $id,
+        'alarm_type' => Notification::$NEW_AD,
+        'create_time' => date('Y-m-d H:i:s'),
+      ));
+
+      $mail = new Mailer();
+      $subject = '商务[' . $_SESSION['fullname'] . ']再次提交广告：' . $attr['channel'] . ' ' . $attr['ad_name'];
+      $mail->send(OP_MAIL, $subject, $mail->create('ad-new', $attr));
+
+      $this->output(array(
+        'code' => 0,
+        'msg' => '已发送申请',
+      ));
+    }
+
     $attr = $this->validate($attr, $id);
     // 拆分不同表的数据
     $ios = Utils::array_pick($attr, self::$FILEDS_IOS);
@@ -655,6 +676,7 @@ class ADController extends BaseController {
 
 
   /**
+   * TODO 回头把这个函数挪到ADModel里
    * 校验用户修改的内容
    * @param array $attr
    * @param string [optional] $id

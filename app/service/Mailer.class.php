@@ -23,6 +23,7 @@ class Mailer {
     $this->mail = new PHPMailer();
 
     $this->mail->isSMTP();
+    $this->mail->CharSet = "UTF-8";
     $this->mail->Host = 'smtp.exmail.qq.com';
     $this->mail->SMTPAuth = true;
     $this->mail->Username = 'support@dianjoy.com';
