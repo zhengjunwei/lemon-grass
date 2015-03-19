@@ -39,6 +39,7 @@ class ADController extends BaseController {
   public function get_list() {
     $service =  new AD();
     $me = $_SESSION['id'];
+    $im_cp = $_SESSION['role'] == Auth::$CP_PERMISSION;
 
     $pagesize = isset($_REQUEST['pagesize']) ? (int)$_REQUEST['pagesize'] : 10;
     $page = isset($_REQUEST['page']) ? (int)$_REQUEST['page'] : 0;
@@ -48,7 +49,7 @@ class ADController extends BaseController {
     $filters = array(
       'keyword' => $_REQUEST['keyword'],
       'pack_name' => $_REQUEST['pack_name'],
-      'salesman' => $me,
+      ($im_cp ? 'create_user' : 'salesman') => $me,
     );
     if (isset($_REQUEST['channel'])) {
       $filters['channel'] = $_REQUEST['channel'];
@@ -264,6 +265,7 @@ class ADController extends BaseController {
     $CM = $this->get_cm();
 
     $me = $_SESSION['id'];
+    $im_cp = $_SESSION['role'] == Auth::$CP_PERMISSION;
     $now = date('Y-m-d H:i:s');
     $attr = $this->get_post_data();
     $id = isset($attr['id']) ? $attr['id'] : $CM->id1();
@@ -279,7 +281,7 @@ class ADController extends BaseController {
     $attr['status'] = 2; // 新建，待审核
     $attr['create_user'] = $me;
     $attr['create_time'] = $now;
-    if ($_SESSION['role'] == Auth::$CP_PERMISSION) {
+    if (!$im_cp) {
       $channel['execute_owner'] = $me;
     }
     $replace_id = '';

@@ -1,5 +1,6 @@
 <?php
 use diy\service\AD;
+use diy\service\Auth;
 use diy\service\Transfer;
 
 /**
@@ -19,18 +20,18 @@ class HomeController extends BaseController {
     $month_ago = date('Y-m-d', time() - 2678400);
     $yesterday = date('Y-m-d', time() - 86400);
     $me = $_SESSION['id'];
+    $im_cp = $_SESSION['role'] == Auth::$CP_PERMISSION;
     $service = new AD();
     $transfer = new Transfer();
 
     // 取在线广告数
-    $ad = $service->get_ad_number(array(
-      'owner' => $me,
+    $filter = array(
+      ($im_cp ? 'create_user' : 'salesman') => $me,
       'status' => 0,
-    ));
-    $adids = $service->get_ad_ids(array(
-      'owner' => $me,
-      'start' => $month_ago,
-    ));
+    );
+    $ad = $service->get_ad_number($filter);
+    $filter['start'] = $month_ago;
+    $adids = $service->get_ad_ids($filter);
 
     // 取一周内激活数
     $transfers = $transfer->get_ad_transfer(array(
