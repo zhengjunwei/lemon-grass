@@ -31,6 +31,10 @@ class Auth extends Base {
     ));
     $this->user = $user = $state->fetch(PDO::FETCH_ASSOC);
 
+    if (!$this->has_permission()) {
+      return !!$user;
+    }
+
     // 记录用户信息
     session_start();
     $_SESSION['user'] = $username;
@@ -59,6 +63,10 @@ class Auth extends Base {
     ));
     $this->user = $user = $state->fetch(PDO::FETCH_ASSOC);
 
+    if (!$this->has_permission()) {
+      return !!$user;
+    }
+
     // 记录到session
     session_start();
     $_SESSION['email'] = $email;
@@ -70,6 +78,8 @@ class Auth extends Base {
       'time' => $user['last_login_time'],
       'ip' => $user['last_login_ip'],
     );
+
+    return !!$user;
   }
 
   /**
