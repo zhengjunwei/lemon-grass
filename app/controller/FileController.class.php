@@ -290,8 +290,8 @@ class FileController extends BaseController {
         $ad_service = new AD();
         $info       = $ad_service->get_ad_info_by_pack_name( $form['pack_name'], ADModel::IOS );
         if ($info) {
+          $info = $this->addPrefixToAssets( $info );
           $form = array_merge($form, $info);
-          $this->addPrefixToAssets( $info );
         }
       }
 
