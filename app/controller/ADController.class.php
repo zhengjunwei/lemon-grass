@@ -119,7 +119,7 @@ class ADController extends BaseController {
         'today_left' => $value['step_rmb'] != 0 ? (int)($value['rmb'] / $value['step_rmb']) : 0,
         'job_num' => (int)$ad_jobs[$id]['jobnum'],
         'job_time' => date("H:i", strtotime($ad_jobs[$id]['jobtime'])),
-        'is_ready' => $value['status'] == 1 || $value['status'] == 0,
+        'is_ready' => in_array($value['status'], array(0, 1, 4)),
       ));
     }
 
