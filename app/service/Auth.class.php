@@ -79,7 +79,7 @@ class Auth extends Base {
       'ip' => $user['last_login_ip'],
     );
 
-    return false;
+    return true;
   }
 
   /**
