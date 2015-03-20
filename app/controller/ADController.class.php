@@ -476,8 +476,12 @@ class ADController extends BaseController {
       $this->exit_with_error(30, '修改广告失败', 400, SQLHelper::$info);
     }
 
+    // 记录操作
+    $logger = new ADOperationLogger();
+    $logger->log($id, 'ad', 'edit', json_encode(array_merge($attr, $ios, $channel)));
+
     $notice_status = false;
-    if ($attr['others']) { // 发送一枚通知
+    if ($attr['others']) { // 广告备注修改，需发送一枚通知
       $notice = new Notification();
       $notice_status = $notice->send(array(
         'ad_id' => $id,
