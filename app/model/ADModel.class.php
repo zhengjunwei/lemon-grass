@@ -17,4 +17,7 @@ class ADModel {
   const APPLY = 2;
   const REPLACE = 3;
   const REJECTED = 4;
+
+  const ANDROID = 1;
+  const IOS = 2;
 }

@@ -146,8 +146,9 @@ class ADController extends BaseController {
     $labels = $ad_info->select_ad_labels($DB);
     $sales = admin::get_all_sales($DB);
     $me = $_SESSION['id'];
+    $im_cp = $_SESSION['role'] == Auth::$CP_PERMISSION;
     $init = array(
-      'ad_app_type' => 1,
+      'ad_app_type' => $im_cp ? 2 : 1, // cp默认为iPhone
       'ad_type' => 0,
       'cate' => 1,
       'cpc_cpa' => 'cpa',

@@ -75,12 +75,13 @@ class AD extends Base {
     return $DB->query($sql)->fetchAll(PDO::FETCH_COLUMN);
   }
 
-  public function get_ad_info_by_pack_name($pack_name) {
+  public function get_ad_info_by_pack_name($pack_name, $platform = 1) {
     $DB = $this->get_read_pdo();
+    $platform = ' AND `ad_app_type`=' . $platform;
     $sql = "SELECT `ad_name`, `ad_app_type`, `pic_path`, `ad_desc`,
               `cpc_cpa`, `ad_shoot`, `cate`, `ad_type`
             FROM `t_adinfo`
-            WHERE `pack_name`=:pack_name AND `status`>=0
+            WHERE `pack_name`=:pack_name AND `status`>=0 $platform
             ORDER BY `status`ASC, `create_time` DESC
             LIMIT 1";
     $state = $DB->prepare($sql);

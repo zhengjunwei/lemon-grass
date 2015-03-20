@@ -1,4 +1,8 @@
 <?php
+use CFPropertyList\CFPropertyList;
+use CFPropertyList\CFDictionary;
+use CFPropertyList\CFType;
+use diy\model\ADModel;
 use diy\service\AD;
 use diy\service\FileLog;
 use diy\utils\Utils;
@@ -11,6 +15,8 @@ use diy\utils\Utils;
  */
 
 class FileController extends BaseController {
+  protected $need_auth = false;
+
   private $radar_map = array(
     'pack_name' => 'packagename',
     'ad_name' => 'app_name',
@@ -66,8 +72,12 @@ class FileController extends BaseController {
       'form' => array(),
     );
 
-    if (preg_match('/\.apk$/', $new_path)) { // 仅解释apk文件，其他直接返回空
-      $package = $this->parse_apk( $new_path, $type);
+    if (preg_match('/\.apk$/', $new_path)) {
+      $package = $this->parse_apk( $new_path);
+      $result = array_merge($result, $package);
+    }
+    if (preg_match('/\.ipa$/', $new_path)) {
+      $package = $this->parse_ipa($new_path, $id);
       $result = array_merge($result, $package);
     }
     $result['form']['id'] = $id;
@@ -206,11 +216,10 @@ class FileController extends BaseController {
 
   /**
    * @param $new_path
-   * @param $type
    *
    * @return array
    */
-  private function parse_apk( $new_path, $type ) {
+  private function parse_apk( $new_path ) {
     try {
       $apk = new ApkParser\Parser($new_path);
       $manifest = $apk->getManifest();
@@ -221,26 +230,23 @@ class FileController extends BaseController {
         'ad_size'   => Utils::format_file_size( filesize( $new_path ) ),
       );
 
-      $info = array();
-      if ( $type == 'ad_url' ) {
-        // 从数据库读相同包名的广告有哪些可以直接用的数据
-        $ad_service = new AD();
-        $info = $ad_service->get_ad_info_by_pack_name($package['pack_name']);
-        if (!$info && !defined('DEBUG')) { // 没有同包名的广告，再试试应用雷达
-          try {
-            $info = json_decode(file_get_contents('http://192.168.0.165/apk_info.php?pack_name=' . $package['pack_name']));
-          } catch (Exception $e) {
+      // 从数据库读相同包名的广告有哪些可以直接用的数据
+      $ad_service = new AD();
+      $info = $ad_service->get_ad_info_by_pack_name($package['pack_name']);
+      if (!$info && !defined('DEBUG')) { // 没有同包名的广告，再试试应用雷达
+        try {
+          $info = json_decode(file_get_contents('http://192.168.0.165/apk_info.php?pack_name=' . $package['pack_name']));
+        } catch (Exception $e) {
 
-          }
-          if ($info) {
-            foreach ( $this->radar_map as $key => $value ) {
-              $info[$key] = $info[$value];
-            }
-            $info['shoots'] = explode(',', $info['ad_shoot']);
+        }
+        if ($info) {
+          foreach ( $this->radar_map as $key => $value ) {
+            $info[$key] = $info[$value];
           }
         }
-        $info['ad_shoot'] = $info['ad_shoot'] ? UPLOAD_URL . $info['ad_shoot'] : '';
-        $info['pic_path'] = $info['pic_path'] ? UPLOAD_URL . $info['pic_path'] : '';
+      }
+      if ($info) {
+        $info = $this->addPrefixToAssets( $info );
       }
 
       $result = array(
@@ -254,6 +260,46 @@ class FileController extends BaseController {
     }
 
     return $result;
+  }
+
+  public function parse_ipa( $new_path, $id ) {
+    $zip = new ZipArchive();
+    if ($zip->open($new_path)) {
+      $filename = '';
+      for ($i = 0; $i < $zip->numFiles; $i++) {
+        $name = $zip->getNameIndex($i);
+        if (preg_match('/Payload\/(.+)?\.app\/Info.plist$/i', $name)) {
+          $filename = $name;
+          break;
+        }
+      }
+      if (!$filename) {
+        $this->exit_with_error(20, '无法解析IPA文件', 406);
+      }
+      $plist = $zip->getFromName($filename);
+      $tmp_path = '/tmp/' . $id . '.plist';
+
+      // 写在临时文件夹里
+      file_put_contents($tmp_path, $plist);
+
+      $form = $this->parse_plist( $tmp_path );
+      $form['ad_size'] = Utils::format_file_size( filesize( $new_path ) );
+
+      // 从数据库读相同包名的广告来补充数据
+      if ( $form['pack_name'] ) {
+        $ad_service = new AD();
+        $info       = $ad_service->get_ad_info_by_pack_name( $form['pack_name'], ADModel::IOS );
+        if ($info) {
+          $form = array_merge($form, $info);
+          $this->addPrefixToAssets( $info );
+        }
+      }
+
+      return array(
+        'form' => $form,
+      );
+    };
+    return array('error' => '解压失败');
   }
 
   /**
@@ -281,23 +327,10 @@ class FileController extends BaseController {
    * @param $http_response_header
    */
   private function parse_filename( $url, $http_response_header ) {
-    $http_reg = '/^HTTP\/\d\.\d (\d)\d{2}/';
     $location_reg = '/^Location: (\S+)/i';
-    $content_reg = '/^Content-Disposition: \w+; filename="(\S)+"/';
-    $is_rewrite = $is_final = false;
+    $content_reg = '/^Content-Disposition: \w+; filename="(\S)+"/i';
     foreach ( $http_response_header as $response ) {
       $matches = array();
-
-      // 这行是状态码？
-      $is_status = preg_match($http_reg, $response, $matches);
-      if ($is_status) {
-        if ($matches[1] == '3') { // 跳转
-          $is_rewrite = true;
-        } elseif ($matches[1] == '2') { // 最终
-          $is_final = true;
-        }
-        continue;
-      }
 
       // 还是跳转后的url？
       $is_location = preg_match($location_reg, $response, $matches);
@@ -313,5 +346,56 @@ class FileController extends BaseController {
       }
     }
     return $url;
+  }
+
+  /**
+   * 存在库中的文件地址不包含其实路径，通过这个函数补充
+   *
+   * @param $info
+   *
+   * @return mixed
+   */
+  private function addPrefixToAssets( $info ) {
+    $info['ad_shoot'] = $info['ad_shoot'] ? UPLOAD_URL . $info['ad_shoot'] : '';
+    $info['pic_path'] = $info['pic_path'] ? UPLOAD_URL . $info['pic_path'] : '';
+
+    return $info;
+  }
+
+  /**
+   * @param string $path
+   *
+   * @return array
+   */
+  public function parse_plist( $path ) {
+    $plist = new CFPropertyList( $path, CFPropertyList::FORMAT_BINARY );
+    $dict  = $plist->getValue( 'CFDictionary' );
+    $form  = array(
+      'ad_name'      => $dict->get( 'CFBundleDisplayName' ),
+      'ad_lib'       => $dict->get( 'CFBundleShortVersionsString' ),
+      'pack_name'    => $dict->get( 'CFBundleIdentifier' ),
+      'process_name' => $dict->get( 'CFBundleExecutable' ),
+    );
+    foreach ( $form as $key => $value ) {
+      if ( $value instanceof CFType ) {
+        $form[ $key ] = $value->getValue();
+      }
+      if ( $key == 'ad_lib' && ! $value ) {
+        $ad_lib       = $dict->get( 'CFBundleVersion' );
+        $form[ $key ] = $ad_lib instanceof CFType ? $ad_lib->getValue() : '';
+      }
+    }
+
+    $urls        = $dict->get( 'CFBundleURLTypes' );
+    $url_schemes = array();
+    if ( $urls ) {
+      $urls = $urls->toArray();
+      foreach ( $urls as $url ) {
+        $url_schemes[] = $url['CFBundleURLSchemes'];
+      }
+    }
+    $form['url_scheme'] = implode( ';', Utils::array_flatten( $url_schemes ) );
+
+    return $form;
   }
 }
