@@ -12,38 +12,13 @@ use diy\service\Transfer;
 
 class StatController extends BaseController {
   public function get_ad_stat() {
-    $me = $_SESSION['id'];
-    $im_cp = $_SESSION['role'] == Auth::$CP_PERMISSION;
-
-    $today = date('Y-m-d');
-    $week = date('Y-m-d', time() - 604800);
-    $start = empty($_REQUEST['start']) ? $week : $_REQUEST['start'];
-    $end = empty($_REQUEST['end']) ? $today : $_REQUEST['end'];
-    $pagesize = empty($_REQUEST['pagesize']) ? 10 : (int)$_REQUEST['pagesize'];
-    $page = (int)$_REQUEST['page'];
-    $page_start = $page * $pagesize;
-    $keyword = $_REQUEST['keyword'];
-    $channel = $_REQUEST['channel'];
-    $ad_name = $_REQUEST['ad_name'];
-
-    $filter = array(
-      ($im_cp ? 'create_user' : 'salesman') => $me,
-      'start' => $start,
-      'end' => $end,
-      'keyword' => $keyword,
-    );
-    if ($channel) {
-      $filter['channel'] = $channel;
-    }
-    if ($ad_name) {
-      $filter['ad_name'] = $ad_name;
-    }
+    list( $start, $end, $pagesize, $page_start, $filter ) = $this->getFilter();
     $ad_service = new AD();
     $ad_info = $ad_service->get_ad_info($filter, $page_start, $pagesize);
     $total = $ad_service->get_ad_number($filter);
 
     $service = new Transfer();
-    $service->get_ad_transfer(array(
+    $transfer_res = $service->get_ad_transfer(array(
       'start' => $start,
       'end' => $end,
       'ad_id' => array_unique(array_keys($ad_info)),
@@ -69,5 +44,102 @@ class StatController extends BaseController {
       'start' => $page_start,
       'list' => $ad_stat,
     ));
+  }
+
+  public function get_the_ad_stat($id) {
+    if (!$this->own_ad($id)) {
+      $this->exit_with_error(20, '您无法查询此广告', 401);
+    }
+    list($start, $end) = $this->getFilter($id);
+
+    $service = new Transfer();
+    $result = $service->get_ad_transfer(array(
+      'start' => $start,
+      'end' => $end,
+      'ad_id' => $id,
+    ), 'transfer_date');
+
+    $this->output(array(
+      'code' => 0,
+      'msg' => 'fetched',
+      'total' => count($result),
+      'start' => 0,
+      'list' => $result,
+    ));
+  }
+
+  public function get_ad_daily_stat($id, $date) {
+    if (!$this->own_ad($id)) {
+      $this->exit_with_error(20, '您无法查询此广告', 401);
+    }
+    list($start, $end) = $this->getFilter($id);
+
+    $service = new Transfer();
+    $result = $service->get_ad_transfer(array(
+      'start' => $start,
+      'end' => $end,
+      'ad_id' => $id,
+      'transfer_date' => $date,
+    ), 'transfer_date');
+
+    $this->output(array(
+      'code' => 0,
+      'msg' => 'fetched',
+      'total' => count($result),
+      'start' => 0,
+      'list' => $result,
+    ));
+  }
+
+  private function own_ad( $id ) {
+    $service = new AD();
+    $me = $_SESSION['id'];
+    $im_cp = $_SESSION['role'] == Auth::$CP_PERMISSION;
+    $filter = array(
+      'id' => $id,
+      ($im_cp ? 'create_user' : 'salesman') => $me,
+    );
+    $num = $service->get_ad_number($filter);
+    return $num > 0;
+  }
+
+  /**
+   * @param bool $ad_id
+   *
+   * @return array
+   */
+  private function getFilter($ad_id = false) {
+
+    $today      = date( 'Y-m-d' );
+    $week       = date( 'Y-m-d', time() - 604800 );
+    $start      = empty( $_REQUEST['start'] ) ? $week : $_REQUEST['start'];
+    $end        = empty( $_REQUEST['end'] ) ? $today : $_REQUEST['end'];
+    $pagesize   = empty( $_REQUEST['pagesize'] ) ? 10 : (int) $_REQUEST['pagesize'];
+    $page       = (int) $_REQUEST['page'];
+    $page_start = $page * $pagesize;
+    $keyword    = $_REQUEST['keyword'];
+    $channel    = $_REQUEST['channel'];
+    $ad_name    = $_REQUEST['ad_name'];
+
+    $filter = array(
+      'start'                                 => $start,
+      'end'                                   => $end,
+      'keyword'                               => $keyword,
+    );
+    if ($ad_id) {
+      $filter['id'] = $ad_id;
+    } else {
+      $me    = $_SESSION['id'];
+      $im_cp = $_SESSION['role'] == Auth::$CP_PERMISSION;
+      $filter[$im_cp ? 'create_user' : 'salesman'] = $me;
+    }
+    if ( $channel ) {
+      $filter['channel'] = $channel;
+    }
+    if ( $ad_name ) {
+      $filter['ad_name'] = $ad_name;
+    }
+
+    return array( $start, $end, $pagesize, $page_start, $filter );
   }
 } 
