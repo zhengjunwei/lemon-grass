@@ -50,7 +50,7 @@ class HomeController extends BaseController {
 
     // 取最近发生变化的5个广告
     $latest = $service->get_ad_info(array(
-      'owner' => $me,
+      ($im_cp ? 'create_user' : 'salesman') => $me,
     ), 0, 5, 'status_time');
     foreach ( $latest as $id => $item ) {
       $item['id'] = $id;

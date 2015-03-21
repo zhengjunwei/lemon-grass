@@ -25,13 +25,17 @@
 </head>
 <body>
 <h1>修改广告申请</h1>
-<p class="lead">{{owner}}想修改广告{{channel}} {{ad_name}}。请尽快处理。</p>
+<p class="lead"><strong>{{owner}}</strong>想修改广告 <strong>{{channel}} {{ad_name}} {{cid}}</strong>。请尽快处理。</p>
 
 <table border="1" cellpadding="5" cellspacing="1">
   <caption>变动如下</caption>
   <tr>
+    <th>广告ID</th>
+    <td><a href="http://www.dianjoy.com/dev/admin/#/ad/{{id}}" target="_blank" title="直达链接">{{id}}</a></td>
+  </tr>
+  <tr>
     <th>属性</th>
-    <td>{{key}}</td>
+    <td>{{label}}</td>
   </tr>
   <tr>
     <th>修改为</th>

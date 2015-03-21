@@ -654,7 +654,8 @@ class ADController extends BaseController {
     ));
 
     // 给运营发邮件
-    $info = $replace_id ? $this->get_ad_info()->get_ad_info_by_id($DB, $id) : null;
+    $service = new AD();
+    $info = $service->get_ad_info(array('id' => $replace_id ? $replace_id : $id), 0, 1);
     $mail = new Mailer();
     $subject = $replace_id ? '替换成新广告' : '广告属性修改';
     $template = $replace_id ? 'apply-replace': 'apply-new';
