@@ -105,11 +105,18 @@ class AD extends Base {
     return $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC|PDO::FETCH_UNIQUE|PDO::FETCH_GROUP);
   }
 
-  public function check_ad_owner( $id, $me ) {
+  public function check_ad_owner( $id ) {
     $DB = $this->get_read_pdo();
+    $me = $_SESSION['id'];
+    $im_cp = $_SESSION['role'] == Auth::$CP_PERMISSION;
     $sql = "SELECT 'x'
             FROM `t_adinfo` i LEFT JOIN `t_ad_source` s ON i.`id`=s.`id`
-            WHERE i.`id`=:id AND (`owner`=:me OR `execute_owner`=:me)";
+            WHERE i.`id`=:id";
+    if ($im_cp) {
+      $sql .= ' AND `create_user`=:me';
+    } else {
+      $sql .= ' AND (`owner`=:me OR `execute_owner`=:me)';
+    }
     $state = $DB->prepare($sql);
     $state->execute(array(
       ':id' => $id,

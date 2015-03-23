@@ -138,6 +138,11 @@ class ADController extends BaseController {
    * @param $id
    */
   public function init($id) {
+    $service = new AD();
+    if (!$service->check_ad_owner($id)) {
+      $this->exit_with_error(20, '您无法查询此广告的详细信息', 401);
+    }
+
     require dirname(__FILE__) . '/../../dev_inc/admin.class.php';
     $DB = $this->get_pdo_read();
     $CM = $this->get_cm();
@@ -246,9 +251,6 @@ class ADController extends BaseController {
       $res['decline'] = $log;
     }
 
-    $options = array_merge($options, array(
-      'apk_history' => $upload_log,
-    ));
     $result = array_merge($init, $res);
 
     $this->output(array(
@@ -423,15 +425,6 @@ class ADController extends BaseController {
     $service = new AD();
     $info = $service->get_ad_info(array('id' => $id), 0, 1);
 
-    // 需要发申请的修改，只有未上线的需要申请
-    $apply_change = array('job_num', 'today_left', 'ad_url', 'quote_rmb');
-    if (array_intersect($apply_change, array_keys($attr)) && $info['status'] != 2) {
-      return $this->send_apply($DB, $id, $attr);
-    }
-    if (array_key_exists('status', $attr) && $attr['status'] != -2) { // 修改状态，不是删除
-      return $this->send_apply($DB, $id, $attr);
-    }
-
     // 二次申请上线
     if ($info['status'] == ADModel::REJECTED && $attr['status'] == ADModel::ONLINE) {
       SQLHelper::update($DB, self::$T_INFO, array('status' => 2), $id);
@@ -450,6 +443,15 @@ class ADController extends BaseController {
         'code' => 0,
         'msg' => '已发送申请',
       ));
+    }
+
+    // 需要发申请的修改，只有未上线的需要申请
+    $apply_change = array('job_num', 'today_left', 'ad_url', 'quote_rmb');
+    if (array_intersect($apply_change, array_keys($attr)) && $info['status'] != 2) {
+      return $this->send_apply($DB, $id, $attr);
+    }
+    if (array_key_exists('status', $attr) && $attr['status'] != -2) { // 修改状态，不是删除
+      return $this->send_apply($DB, $id, $attr);
     }
 
     $attr = $this->validate($attr, $id);

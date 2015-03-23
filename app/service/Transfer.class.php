@@ -8,12 +8,10 @@
 
 namespace diy\service;
 
-
 use diy\utils\Utils;
 use PDO;
 
 class Transfer extends Base {
-
   /**
    * 取广告统计
    * @param array $filters
@@ -23,15 +21,15 @@ class Transfer extends Base {
    */
   public function get_ad_transfer( array $filters, $group = '' ) {
     $DB = $this->get_read_pdo();
-    $filter_sql = $this->parse_filter($filters, false);
+    $filter_sql = $this->parse_filter($filters);
     $group_sql = $group ? "`$group`," : '';
-    $sql = "SELECT $group_sql SUM(`rmb_total`) AS `rmb`, SUM(`transfer_total`) AS `transfer`
+    $sql = "SELECT $group_sql SUM(`transfer_total`) AS `transfer`
             FROM `s_transfer_stat_ad`
             WHERE $filter_sql";
     if ($group) {
       $sql .= " \nGROUP BY `$group`";
     }
-    return $DB->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    return $DB->query($sql)->fetchAll(PDO::FETCH_KEY_PAIR);
   }
 
   protected function parse_filter($filters, $is_append = false) {

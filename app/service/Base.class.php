@@ -17,6 +17,7 @@ class Base {
 
   protected $DB;
   protected $DB_write;
+  protected $DB_stat;
 
   /**
    * @return PDO
@@ -32,6 +33,11 @@ class Base {
   protected function get_write_pdo() {
     $this->DB_write = $this->DB_write ? $this->DB_write : require dirname(__FILE__) . '/../../inc/pdo.php';
     return $this->DB_write;
+  }
+
+  protected function get_stat_pdo() {
+    $this->DB_stat = $this->DB_stat ? $this->DB_stat : require dirname(__FILE__) . '/../../dev_inc/pdo_stat_read_remote.php';
+    return $this->DB_stat;
   }
 
   public function __construct() {
