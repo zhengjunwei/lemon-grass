@@ -138,11 +138,6 @@ class ADController extends BaseController {
    * @param $id
    */
   public function init($id) {
-    $service = new AD();
-    if (!$service->check_ad_owner($id)) {
-      $this->exit_with_error(20, '您无法查询此广告的详细信息', 401);
-    }
-
     require dirname(__FILE__) . '/../../dev_inc/admin.class.php';
     $DB = $this->get_pdo_read();
     $CM = $this->get_cm();
@@ -215,6 +210,10 @@ class ADController extends BaseController {
     }
 
     // 广告内容
+    $service = new AD();
+    if (!$service->check_ad_owner($id)) {
+      $this->exit_with_error(20, '您无法查询此广告的详细信息', 401);
+    }
     $res = $ad_info->get_ad_info_by_id($DB, $id);
     $ad_shoot = preg_replace('/^,|,$/', '', $res['ad_shoot']);
     $ad_shoots = preg_split('/,+/', $ad_shoot);

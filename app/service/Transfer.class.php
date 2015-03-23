@@ -29,7 +29,7 @@ class Transfer extends Base {
     if ($group) {
       $sql .= " \nGROUP BY `$group`";
     }
-    return $DB->query($sql)->fetchAll(PDO::FETCH_KEY_PAIR);
+    return $DB->query($sql)->fetchAll($group ? PDO::FETCH_KEY_PAIR : PDO::FETCH_COLUMN);
   }
 
   protected function parse_filter($filters, $is_append = false) {

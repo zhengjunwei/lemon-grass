@@ -12,16 +12,32 @@ namespace diy\service;
 use diy\utils\Utils;
 use PDO;
 
-class IOS_Click extends Base {
-  public function get_ad_click( $filters, $group ) {
+class IOS_Stat extends Base {
+  const HOUR = 'HOUR';
+  const DATE = 'DATE';
+
+  public function get_ad_click( $filters, $group, $type = 'DATE' ) {
     $DB = $this->get_stat_pdo();
     $filter = $this->parse_filter($filters);
-    $group_field = $group ? "`$group`," : "";
+    $group_field = $group ? "$type(`$group`)," : '';
     $sql = "SELECT $group_field SUM(`num`) AS `num`
             FROM `s_ios_click`
             WHERE $filter";
     if ($group) {
-      $sql .= "\nGROUP BY `$group`";
+      $sql .= "\nGROUP BY $type(`$group`)";
+    }
+    return $DB->query($sql)->fetchAll(PDO::FETCH_KEY_PAIR);
+  }
+
+  public function get_ad_transfer( $filters, $group, $type = 'DATE') {
+    $DB = $this->get_stat_pdo();
+    $filter = $this->parse_filter($filters);
+    $group_field = $group ? "$type(`$group`)," : '';
+    $sql = "SELECT $group_field, `num`
+            FROM `s_ios_transfer`
+            WHERE $filter";
+    if ($group) {
+      $sql .= "\nGROUP BY $type(`$group`)";
     }
     return $DB->query($sql)->fetchAll(PDO::FETCH_KEY_PAIR);
   }
@@ -39,6 +55,10 @@ class IOS_Click extends Base {
 
         case 'end':
           $result .= " AND `stat_date`<='$value'";
+          break;
+
+        case 'date':
+          $result .= " AND DATE(`stat_date`)='$value'";
           break;
       }
     }

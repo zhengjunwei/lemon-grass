@@ -40,9 +40,8 @@ class HomeController extends BaseController {
       'ad_id' => $adids,
     ));
     $transfer_total = $rmb_total = 0;
-    foreach ( $transfers as $day ) {
-      $transfer_total += $day['transfer'];
-      $rmb_total += $day['rmb'];
+    foreach ( $transfers as $num ) {
+      $transfer_total += $num;
     }
 
     // 取一周内下载数
@@ -64,6 +63,15 @@ class HomeController extends BaseController {
       'end' => $yesterday,
       'ad_id' => $adids,
     ), 'transfer_date');
+    $chart = array();
+    foreach ( $chart_transfer as $date => $num ) {
+      $chart[] = array(
+        'transfer_date' => $date,
+        'transfer' => $num,
+        'rmb' => 0,
+      );
+    }
+
 
     $result = array(
       'code' => 0,
@@ -77,7 +85,7 @@ class HomeController extends BaseController {
         'saved' => 0,
         'percent' => 0,
         'record' => $latest,
-        'transfer' => $chart_transfer,
+        'transfer' => $chart,
       ),
     );
     $this->output($result);

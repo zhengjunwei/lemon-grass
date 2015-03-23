@@ -8,7 +8,7 @@
 
 use diy\service\AD;
 use diy\service\Auth;
-use diy\service\IOS_Click;
+use diy\service\IOS_Stat;
 use diy\service\Transfer;
 
 class StatController extends BaseController {
@@ -25,7 +25,7 @@ class StatController extends BaseController {
       'end' => $end,
       'ad_id' => $ad_ids,
     ), 'ad_id');
-    $ios = new IOS_Click();
+    $ios = new IOS_Stat();
     $click_res = $ios->get_ad_click(array(
       'start' => $start,
       'end' => $end,
@@ -43,7 +43,7 @@ class StatController extends BaseController {
         'id' => $id,
         'transfer' => $transfer,
         'click' => (int)$click_res[$id],
-        'cost' => $ad_info['quote_rmb'] * $transfer,
+        'cost' => $ad_info[$id]['quote_rmb'] * $transfer,
       ));
       $ad_stat[] = $ad;
     }
@@ -71,7 +71,7 @@ class StatController extends BaseController {
       'end' => $end,
       'ad_id' => $id,
     ), 'transfer_date');
-    $ios = new IOS_Click();
+    $ios = new IOS_Stat();
     $click_res = $ios->get_ad_click(array(
       'start' => $start,
       'end' => $end,
@@ -107,20 +107,32 @@ class StatController extends BaseController {
     if (!$ad->check_ad_owner($id)) {
       $this->exit_with_error(20, '您无法查询此广告', 401);
     }
-    list($start, $end) = $this->getFilter($id);
 
-    $service = new Transfer();
-    $result = $service->get_ad_transfer(array(
-      'start' => $start,
-      'end' => $end,
+    $info = $ad->get_ad_info(array('id' => $id), 0, 1);
+    $ios = new IOS_Stat();
+    $transfer_res = $ios->get_ad_transfer(array(
+      'date' => $date,
       'ad_id' => $id,
-      'transfer_date' => $date,
-    ), 'transfer_date');
+    ), 'stat_date', IOS_Stat::HOUR);
+    $click_res = $ios->get_ad_click(array(
+      'date' => $date,
+      'ad_id' => $id,
+    ), 'stat_date', IOS_Stat::HOUR);
+
+    $result = array();
+    for ($i = 0; $i < 24; $i++) {
+      $result[] = array(
+        'hour' => $i,
+        'transfer' => (int)$transfer_res[$i],
+        'click' => (int)$click_res[$i],
+        'cost' => $info['quote_rmb'] * (int)$transfer_res[$i],
+      );
+    }
 
     $this->output(array(
       'code' => 0,
       'msg' => 'fetched',
-      'total' => count($result),
+      'total' => 24,
       'start' => 0,
       'list' => $result,
     ));

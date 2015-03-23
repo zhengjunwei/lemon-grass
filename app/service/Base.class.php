@@ -23,7 +23,7 @@ class Base {
    * @return PDO
    */
   protected function get_read_pdo() {
-    $this->DB = $this->DB ? $this->DB : require dirname(__FILE__) . '/../../inc/pdo_slave.php';
+    $this->DB = $this->DB ? $this->DB : require dirname(__FILE__) . '/../connector/pdo_slave.php';
     return $this->DB;
   }
 
@@ -31,12 +31,12 @@ class Base {
    * @return PDO
    */
   protected function get_write_pdo() {
-    $this->DB_write = $this->DB_write ? $this->DB_write : require dirname(__FILE__) . '/../../inc/pdo.php';
+    $this->DB_write = $this->DB_write ? $this->DB_write : require dirname(__FILE__) . '/../connector/pdo.php';
     return $this->DB_write;
   }
 
   protected function get_stat_pdo() {
-    $this->DB_stat = $this->DB_stat ? $this->DB_stat : require dirname(__FILE__) . '/../../dev_inc/pdo_stat_read_remote.php';
+    $this->DB_stat = $this->DB_stat ? $this->DB_stat : require dirname(__FILE__) . '/../connector/pdo_stat_read_remote.php';
     return $this->DB_stat;
   }
 
