@@ -120,6 +120,7 @@ class ADController extends BaseController {
         'job_num' => (int)$ad_jobs[$id]['jobnum'],
         'job_time' => date("H:i", strtotime($ad_jobs[$id]['jobtime'])),
         'is_ready' => in_array($value['status'], array(0, 1, 4)),
+        'cp' => $im_cp,
       ));
     }
 
