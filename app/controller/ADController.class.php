@@ -407,8 +407,13 @@ class ADController extends BaseController {
   /**
    * 修改广告
    * 部分属性的修改不会直接体现在表中，而是以请求的方式存在
-   * 针对状态`status`、每日投放量`job_num`、今日余量`today_left`的修改会产生申请
+   * 针对状态`status`、每日投放量`job_num`、今日余量`today_left`、广告链接`ad_url`，
+   * 报价`quote_rmb`的修改会产生申请
+   *
    * 其它修改会直接入库
+   *
+   * 暂时禁止CP用户修改报价
+   *
    * @author Meathill
    * @since 0.1.0
    *
@@ -418,13 +423,19 @@ class ADController extends BaseController {
    * @return null
    */
   public function update($id, $attr = null) {
-    $DB = $this->get_pdo_write();
-
     $attr = $attr ? $attr : $this->get_post_data();
     $service = new AD();
+    $im_cp = $_SESSION['role'] == Auth::$CP_PERMISSION;
+    if (!$service->check_ad_owner($id)) {
+      $this->exit_with_error(10, '不是您的广告，您不能修改', 401);
+    }
+    if (array_key_exists('quote_rmb', $attr) && $im_cp) {
+      $this->exit_with_error(11, '您暂时不能修改您的广告。相关功能正在开发中。', 401);
+    }
     $info = $service->get_ad_info(array('id' => $id), 0, 1);
 
     // 二次申请上线
+    $DB = $this->get_pdo_write();
     if ($info['status'] == ADModel::REJECTED && $attr['status'] == ADModel::ONLINE) {
       SQLHelper::update($DB, self::$T_INFO, array('status' => 2), $id);
       $notice = new Notification();

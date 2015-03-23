@@ -33,7 +33,7 @@ class IOS_Stat extends Base {
     $DB = $this->get_stat_pdo();
     $filter = $this->parse_filter($filters);
     $group_field = $group ? "$type(`$group`)," : '';
-    $sql = "SELECT $group_field, `num`
+    $sql = "SELECT $group_field `num`
             FROM `s_ios_transfer`
             WHERE $filter";
     if ($group) {
@@ -43,7 +43,7 @@ class IOS_Stat extends Base {
   }
 
   protected function parse_filter($filters, $is_append = false) {
-    $spec = array('start', 'end');
+    $spec = array('start', 'end', 'date');
     $pick = Utils::array_pick($filters, $spec);
     $filters = Utils::array_omit($filters, $spec);
     $result = parent::parse_filter($filters, $is_append);

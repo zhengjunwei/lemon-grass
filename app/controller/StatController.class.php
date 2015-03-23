@@ -102,7 +102,8 @@ class StatController extends BaseController {
     ));
   }
 
-  public function get_ad_daily_stat($id, $date) {
+  public function get_ad_daily_stat($param) {
+    list($id, $date) = explode(',', $param);
     $ad = new AD();
     if (!$ad->check_ad_owner($id)) {
       $this->exit_with_error(20, '您无法查询此广告', 401);

@@ -235,7 +235,7 @@ class FileController extends BaseController {
       $info = $ad_service->get_ad_info_by_pack_name($package['pack_name']);
       if (!$info && !defined('DEBUG')) { // 没有同包名的广告，再试试应用雷达
         try {
-          $info = json_decode(file_get_contents('http://192.168.0.165/apk_info.php?pack_name=' . $package['pack_name']));
+          $info = json_decode(file_get_contents('http://192.168.0.165/apk_info.php?pack_name=' . $package['pack_name']), true);
         } catch (Exception $e) {
 
         }
